@@ -74,7 +74,7 @@ async def test_contract_payment_entity_fields(
     contract_fixtures: Dict[str, Any],
 ) -> None:
     """Assert payment entity keys match the real Razorpay payment structure."""
-    expected_keys = set(contract_fixtures["success_shapes"]["payment"].keys())
+    expected_keys = set(contract_fixtures["success_shapes"]["payment"]["data"].keys())
 
     res = await mock_mcp_server.call_tool(
         "fetch_payment",

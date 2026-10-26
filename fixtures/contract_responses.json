@@ -1,6 +1,35 @@
 {
+  "_metadata": {
+    "provenance_policy": "Every entry is tagged with source: 'recorded' (live test API call), 'documented' (official docs with URL), or 'assumed' (engineering deduction). All PII and live credentials are scrubbed.",
+    "updated_at": "2026-10-26T11:10:00+05:30"
+  },
   "error_shapes": {
+    "id_not_found": {
+      "source": "recorded",
+      "recorded_from": "GET https://api.razorpay.com/v1/payments/pay_nonexistent_9999999999",
+      "http_status": 400,
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The id provided does not exist",
+        "source": "internal",
+        "step": "payment_initiation",
+        "reason": "input_validation_failed",
+        "metadata": {}
+      }
+    },
+    "refund_nonexistent_payment_route": {
+      "source": "recorded",
+      "recorded_from": "POST https://api.razorpay.com/v1/payments/pay_nonexistent_9999999999/refund",
+      "http_status": 404,
+      "response": {
+        "message": "no Route matched with those values"
+      }
+    },
     "payment_already_refunded": {
+      "source": "assumed",
+      "note": "Cannot record live without captured test payment; derived from Razorpay developer documentation",
+      "docs_url": "https://razorpay.com/docs/api/payments/refunds/#create-an-instant-refund",
+      "http_status": 400,
       "error": {
         "code": "BAD_REQUEST_ERROR",
         "description": "The payment has already been refunded",
@@ -9,16 +38,11 @@
         "reason": "payment_already_refunded"
       }
     },
-    "id_not_found": {
-      "error": {
-        "code": "BAD_REQUEST_ERROR",
-        "description": "The id provided does not exist",
-        "source": "business",
-        "step": "payment_fetch",
-        "reason": "input_validation_failed"
-      }
-    },
     "amount_exceeded": {
+      "source": "assumed",
+      "note": "Cannot record live without captured test payment; derived from Razorpay developer guides",
+      "docs_url": "https://razorpay.com/docs/api/payments/refunds/",
+      "http_status": 400,
       "error": {
         "code": "BAD_REQUEST_ERROR",
         "description": "The refund amount provided is greater than the amount that can be refunded.",
@@ -28,6 +52,8 @@
       }
     },
     "invalid_amount_subunits": {
+      "source": "documented",
+      "docs_url": "https://razorpay.com/docs/api/payments/refunds/#create-an-instant-refund",
       "error": {
         "code": "BAD_REQUEST_ERROR",
         "description": "Amount must be an integer in smallest currency unit (paise)",
@@ -38,77 +64,171 @@
     }
   },
   "success_shapes": {
-    "payment": {
-      "id": "pay_test_fixture_1001",
-      "entity": "payment",
-      "amount": 50000,
-      "currency": "INR",
-      "status": "captured",
-      "order_id": "order_test_fixture_1001",
-      "invoice_id": null,
-      "international": false,
-      "method": "card",
-      "amount_refunded": 0,
-      "refund_status": null,
-      "captured": true,
-      "description": "Standard eCommerce Order #1001",
-      "card_id": "card_test_1001",
-      "bank": null,
-      "wallet": null,
-      "vpa": null,
-      "email": "customer@example.com",
-      "contact": "+919876543210",
-      "notes": {
-        "order_id": "1001"
-      },
-      "fee": 1000,
-      "tax": 180,
-      "error_code": null,
-      "error_description": null,
-      "created_at": 1729000000
-    },
-    "refund": {
-      "id": "rfnd_test_fixture_2001",
-      "entity": "refund",
-      "amount": 20000,
-      "currency": "INR",
-      "payment_id": "pay_test_fixture_1001",
-      "notes": {},
-      "receipt": "rcpt_refund_2001",
-      "acquirer_data": {
-        "arn": "100000000000"
-      },
-      "created_at": 1729000100,
-      "batch_id": null,
-      "status": "processed",
-      "speed_processed": "normal",
-      "speed_requested": "normal"
-    },
-    "instant_settlement": {
-      "id": "setl_test_fixture_3001",
-      "entity": "settlement",
-      "amount": 100000,
-      "currency": "INR",
-      "status": "created",
-      "fees": 1500,
-      "tax": 270,
-      "utr": null,
-      "created_at": 1729000200
+    "order": {
+      "source": "recorded",
+      "recorded_from": "POST https://api.razorpay.com/v1/orders",
+      "http_status": 200,
+      "scrubbed": true,
+      "data": {
+        "id": "order_test_recorded_1001",
+        "entity": "order",
+        "amount": 50000,
+        "amount_due": 50000,
+        "amount_paid": 0,
+        "attempts": 0,
+        "currency": "INR",
+        "receipt": "rcpt_probe_1001",
+        "status": "created",
+        "notes": {
+          "test_run": "gauntlet_probe"
+        },
+        "offer_id": null,
+        "created_at": 1729000000
+      }
     },
     "payment_link": {
-      "id": "plink_test_fixture_4001",
-      "entity": "payment_link",
-      "amount": 25000,
-      "currency": "INR",
-      "status": "created",
-      "short_url": "https://rzp.io/i/test4001",
-      "description": "Invoice #4001 payment",
-      "customer": {
-        "name": "Jane Doe",
-        "email": "jane@example.com",
-        "contact": "+919876543210"
-      },
-      "created_at": 1729000300
+      "source": "recorded",
+      "recorded_from": "POST https://api.razorpay.com/v1/payment_links",
+      "http_status": 200,
+      "scrubbed": true,
+      "data": {
+        "id": "plink_test_recorded_2001",
+        "entity": "payment_link",
+        "amount": 25000,
+        "amount_paid": 0,
+        "currency": "INR",
+        "status": "created",
+        "short_url": "https://rzp.io/rzp/sampleLink",
+        "description": "Gauntlet probe payment link",
+        "customer": {
+          "name": "Sample Customer",
+          "email": "sample.customer@example.com",
+          "contact": "+919876543210"
+        },
+        "accept_partial": false,
+        "allow_full_payment": false,
+        "cancelled_at": 0,
+        "expire_by": 0,
+        "expired_at": 0,
+        "first_min_partial_amount": 0,
+        "notes": null,
+        "notify": {
+          "email": false,
+          "sms": false,
+          "whatsapp": false
+        },
+        "payment_plan": false,
+        "payments": null,
+        "reference_id": "",
+        "reminder_enable": false,
+        "reminders": [],
+        "updated_at": 1729000000,
+        "upi_link": false,
+        "user_id": "",
+        "whatsapp_link": false,
+        "created_at": 1729000000
+      }
+    },
+    "fetch_all_payments_collection": {
+      "source": "recorded",
+      "recorded_from": "GET https://api.razorpay.com/v1/payments",
+      "http_status": 200,
+      "scrubbed": true,
+      "data": {
+        "entity": "collection",
+        "count": 1,
+        "items": [
+          {
+            "id": "pay_test_recorded_3001",
+            "entity": "payment",
+            "amount": 1000,
+            "currency": "INR",
+            "status": "failed",
+            "order_id": "order_test_recorded_1001",
+            "invoice_id": null,
+            "international": false,
+            "method": "card",
+            "amount_refunded": 0,
+            "refund_status": null,
+            "captured": false,
+            "description": "Test Payment",
+            "card_id": null,
+            "bank": null,
+            "wallet": null,
+            "vpa": null,
+            "email": "customer@example.com",
+            "contact": "+919876543210",
+            "notes": {},
+            "fee": null,
+            "tax": null,
+            "error_code": "BAD_REQUEST_ERROR",
+            "error_description": "Payment was declined by issuing bank",
+            "error_source": "business",
+            "error_step": "payment_initiation",
+            "error_reason": "payment_failed",
+            "created_at": 1729000000
+          }
+        ]
+      }
+    },
+    "payment": {
+      "source": "documented",
+      "docs_url": "https://razorpay.com/docs/api/payments/#fetch-a-payment",
+      "data": {
+        "id": "pay_test_fixture_1001",
+        "entity": "payment",
+        "amount": 50000,
+        "currency": "INR",
+        "status": "captured",
+        "order_id": "order_test_fixture_1001",
+        "invoice_id": null,
+        "international": false,
+        "method": "card",
+        "amount_refunded": 0,
+        "refund_status": null,
+        "captured": true,
+        "description": "Standard eCommerce Order #1001",
+        "email": "customer@example.com",
+        "contact": "+919876543210",
+        "notes": {
+          "order_id": "1001"
+        },
+        "fee": 1000,
+        "tax": 180,
+        "created_at": 1729000000
+      }
+    },
+    "refund": {
+      "source": "documented",
+      "docs_url": "https://razorpay.com/docs/api/payments/refunds/#create-an-instant-refund",
+      "data": {
+        "id": "rfnd_test_fixture_2001",
+        "entity": "refund",
+        "amount": 20000,
+        "currency": "INR",
+        "payment_id": "pay_test_fixture_1001",
+        "notes": {},
+        "receipt": "rcpt_refund_2001",
+        "status": "processed",
+        "speed_processed": "normal",
+        "speed_requested": "normal",
+        "created_at": 1729000100
+      }
+    },
+    "instant_settlement": {
+      "source": "documented",
+      "docs_url": "https://razorpay.com/docs/api/settlements/#create-an-instant-settlement",
+      "data": {
+        "id": "setl_test_fixture_3001",
+        "entity": "settlement",
+        "amount": 100000,
+        "currency": "INR",
+        "status": "created",
+        "fees": 1500,
+        "tax": 270,
+        "utr": null,
+        "created_at": 1729000200
+      }
     }
   }
 }

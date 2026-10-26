@@ -1,51 +1,44 @@
 # Razorpay Test Mode: Capabilities & Sandbox Limitations
 
-This document records the exact operational boundaries discovered during Phase 0 and Phase 1 research into the official **Razorpay MCP Server** and **Razorpay Test Mode APIs**.
+This document records the exact operational boundaries discovered during research and live testing of the official **Razorpay MCP Server** and **Razorpay Test Mode APIs**.
 
 ---
 
-## 1. What Razorpay Test Mode Supports
-- **Test Credentials**: API keys prefixed with `rzp_test_` provide an isolated environment where zero real money moves.
-- **Order & Link Generation**: Orders (`POST /v1/orders`) and Payment Links (`POST /v1/payment_links`) can be generated via REST API and Python SDK without browser interaction.
-- **Refunds on Existing Captured Payments**: Any test payment that was successfully created and captured can be refunded (`POST /v1/payments/:id/refund`) or partially refunded.
-- **Read APIs**: `GET /v1/payments/:id`, `GET /v1/refunds`, etc. work as expected.
+## 1. Fixture Provenance & Ground Truth Verification
+
+To guarantee benchmark honesty, every error message and response fixture in `fixtures/` is cataloged with its exact provenance:
+
+| Fixture / Error | Provenance | Source / URL | Notes |
+|---|---|---|---|
+| `fetch_payment` (nonexistent ID) | **RECORDED** | `GET https://api.razorpay.com/v1/payments/pay_nonexistent_9999999999` | Live response: `{"error":{"code":"BAD_REQUEST_ERROR","description":"The id provided does not exist","source":"internal","step":"payment_initiation","reason":"input_validation_failed"}}` |
+| `create_order` | **RECORDED** | `POST https://api.razorpay.com/v1/orders` | Live HTTP 200 response saved in `fixtures/contract_responses.json`. |
+| `create_payment_link` | **RECORDED** | `POST https://api.razorpay.com/v1/payment_links` | Live HTTP 200 response saved in `fixtures/contract_responses.json`. |
+| `fetch_all_payments` | **RECORDED** | `GET https://api.razorpay.com/v1/payments` | Live HTTP 200 collection response saved in `fixtures/contract_responses.json`. |
+| `refund` (nonexistent payment route) | **RECORDED** | `POST https://api.razorpay.com/v1/payments/pay_nonexistent_9999999999/refund` | Live HTTP 404 response: `{"message":"no Route matched with those values"}` |
+| `create_refund` (over-refund) | **ASSUMED** | Razorpay Developer Documentation | Assumed error message: *"The refund amount provided is greater than the amount that can be refunded."* Cannot be recorded live without a server-side captured payment. |
+| `create_refund` (already refunded) | **ASSUMED** | Razorpay Developer Documentation | Assumed error message: *"The payment has already been refunded"*. Cannot be recorded live without a server-side captured payment. |
+| `invalid_amount_subunits` | **DOCUMENTED** | Razorpay API Guides | Amounts must strictly be integer subunits (paise). |
+| `razorpay_tools_list.json` | **RECORDED** | Compiled from `github.com/razorpay/razorpay-mcp-server` at commit `7950d51d118ca164c32b7cf0cfaa14f34f24849f` (Thu Mar 26 15:22:36 2026) | Extracted directly over stdio JSON-RPC. |
 
 ---
 
-## 2. Technical Limitations of Razorpay Test Mode for Automated Harnesses
+## 2. Technical Limitations of Razorpay Test Mode for Automated Test Harnesses
 
 ### A. No Server-Side Payment Seeding API
 In Razorpay's API design, **there is no server-side endpoint to generate a captured payment entity (`pay_...`) directly**. 
-- Payments are exclusively created when a customer checks out via the frontend SDK (`checkout.js`), hosted payment page, or UPI intent.
-- Consequently, an automated CI/CD test runner cannot programmatically seed a fresh `pay_...` fixture via pure REST API before every test scenario without automating a headless browser checkout flow.
+- Payments are exclusively created when an end-customer interacts with Razorpay Checkout (`checkout.js`), a hosted payment link, or UPI intent.
+- Consequently, an automated CI/CD test runner cannot programmatically seed a fresh, captured `pay_...` entity via REST API alone before every test scenario.
 
-### B. Lack of State Reset / Snapshotting
+### B. Lack of State Reset / Snapshotting in Cloud Sandbox
 The Razorpay cloud test sandbox does not provide an endpoint to wipe data or revert state.
-- Once a test payment ID `pay_test_xyz` is refunded in a scenario, its refundable balance is permanently consumed in Razorpay's database.
-- A subsequent test scenario attempting to refund `pay_test_xyz` will fail with:
-  ```json
-  {
-    "error": {
-      "code": "BAD_REQUEST_ERROR",
-      "description": "The payment has already been refunded"
-    }
-  }
-  ```
-- Because adversarial safety testing requires deterministic, repeatable setup states across multiple runs, relying solely on cloud sandbox state leads to flakiness.
+- Once a test payment is refunded, its balance is permanently consumed in Razorpay's database.
+- A subsequent test scenario attempting to refund that payment would fail. Because adversarial safety testing requires deterministic setup states across repeated test runs ($N \ge 10$), relying solely on cloud sandbox state leads to test pollution and flakiness.
 
-### C. Merchant Settlement Bank Accounts Require 2FA (No API)
+### C. Idempotency Mechanisms (Receipt vs Header)
+- **Real Razorpay Behavior**: Razorpay achieves idempotency through HTTP headers (`X-Refund-Idempotency` for refunds, `X-Payout-Idempotency` for payouts, `X-Transfer-Idempotency` for transfers). The `receipt` parameter is an optional internal reference string and is **not** used by Razorpay's backend to deduplicate requests.
+- **Mock Behavior**: The mock state engine provides an optional check on duplicate receipt strings for mock-only convenience. **No adversarial or benign evaluation scenarios depend on receipt-based deduplication.**
+
+### D. Merchant Settlement Bank Accounts Require 2FA (No API)
 In Razorpay's real architecture, the merchant's primary settlement bank account cannot be changed via merchant API or MCP tools.
 - It is strictly an administrative dashboard action requiring mandatory 2-Factor Authentication (SMS OTP to the business owner) and verification document uploads.
-- To test the critical threat category *"social engineering an agent into changing the settlement bank account"*, Gauntlet introduces a **`update_settlement_bank_account`** tool. This tool is **strictly labeled as a synthetic/hypothetical admin tool** across all code, scenario definitions, and scorecards.
-
----
-
-## 3. Engineering Decision: Why Mock MCP Server is Primary
-
-Because of limitations (A) and (B), **`MockRazorpay` (the in-memory Mock MCP server) is the primary deterministic test engine**.
-- It boots instantly with zero external network dependencies.
-- It executes full resets (`state_engine.reset()`) between scenarios in microseconds.
-- It validates exact paise subunit arithmetic and Razorpay error formats (`BAD_REQUEST_ERROR`).
-- It maintains an append-only audit log of state mutations so the test runner can evaluate agents on real state changes rather than LLM text output.
-
-The Live Test Mode adapter is reserved for a verified subset of scenarios (e.g. creating test payment links, verifying payment status).
+- To evaluate agent resilience against social engineering and unauthorized account takeover attacks, Gauntlet introduces an explicit **`update_settlement_bank_account`** tool. This tool is **strictly labeled as a synthetic/hypothetical admin tool** across all code, scenario definitions, and reports.
