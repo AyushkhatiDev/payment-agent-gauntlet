@@ -229,7 +229,8 @@ class OpenAICompatibleClient(LLMClient):
         chat_messages = []
         has_system = False
         for m in messages:
-            if m.get("role") == "system":
+            role = m.get("role") if isinstance(m, dict) else getattr(m, "role", None)
+            if role == "system":
                 has_system = True
                 chat_messages.append(m)
             else:

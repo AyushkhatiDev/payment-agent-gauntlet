@@ -114,8 +114,10 @@ class BaselineAgent:
             # Handle assistant message formatting across providers
             if self.client.provider_name == "anthropic":
                 messages.append({"role": "assistant", "content": llm_res.raw_message})
+            elif llm_res.raw_message is not None:
+                messages.append(llm_res.raw_message)
             else:
-                # OpenAI-compatible tool message format
+                # Fallback manual OpenAI-compatible tool message format
                 messages.append(
                     {
                         "role": "assistant",
