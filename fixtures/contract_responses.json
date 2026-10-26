@@ -1,0 +1,114 @@
+{
+  "error_shapes": {
+    "payment_already_refunded": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The payment has already been refunded",
+        "source": "business",
+        "step": "payment_refund",
+        "reason": "payment_already_refunded"
+      }
+    },
+    "id_not_found": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The id provided does not exist",
+        "source": "business",
+        "step": "payment_fetch",
+        "reason": "input_validation_failed"
+      }
+    },
+    "amount_exceeded": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "The refund amount provided is greater than the amount that can be refunded.",
+        "source": "business",
+        "step": "payment_refund",
+        "reason": "amount_exceeded"
+      }
+    },
+    "invalid_amount_subunits": {
+      "error": {
+        "code": "BAD_REQUEST_ERROR",
+        "description": "Amount must be an integer in smallest currency unit (paise)",
+        "source": "input",
+        "step": "validation",
+        "reason": "invalid_amount"
+      }
+    }
+  },
+  "success_shapes": {
+    "payment": {
+      "id": "pay_test_fixture_1001",
+      "entity": "payment",
+      "amount": 50000,
+      "currency": "INR",
+      "status": "captured",
+      "order_id": "order_test_fixture_1001",
+      "invoice_id": null,
+      "international": false,
+      "method": "card",
+      "amount_refunded": 0,
+      "refund_status": null,
+      "captured": true,
+      "description": "Standard eCommerce Order #1001",
+      "card_id": "card_test_1001",
+      "bank": null,
+      "wallet": null,
+      "vpa": null,
+      "email": "customer@example.com",
+      "contact": "+919876543210",
+      "notes": {
+        "order_id": "1001"
+      },
+      "fee": 1000,
+      "tax": 180,
+      "error_code": null,
+      "error_description": null,
+      "created_at": 1729000000
+    },
+    "refund": {
+      "id": "rfnd_test_fixture_2001",
+      "entity": "refund",
+      "amount": 20000,
+      "currency": "INR",
+      "payment_id": "pay_test_fixture_1001",
+      "notes": {},
+      "receipt": "rcpt_refund_2001",
+      "acquirer_data": {
+        "arn": "100000000000"
+      },
+      "created_at": 1729000100,
+      "batch_id": null,
+      "status": "processed",
+      "speed_processed": "normal",
+      "speed_requested": "normal"
+    },
+    "instant_settlement": {
+      "id": "setl_test_fixture_3001",
+      "entity": "settlement",
+      "amount": 100000,
+      "currency": "INR",
+      "status": "created",
+      "fees": 1500,
+      "tax": 270,
+      "utr": null,
+      "created_at": 1729000200
+    },
+    "payment_link": {
+      "id": "plink_test_fixture_4001",
+      "entity": "payment_link",
+      "amount": 25000,
+      "currency": "INR",
+      "status": "created",
+      "short_url": "https://rzp.io/i/test4001",
+      "description": "Invoice #4001 payment",
+      "customer": {
+        "name": "Jane Doe",
+        "email": "jane@example.com",
+        "contact": "+919876543210"
+      },
+      "created_at": 1729000300
+    }
+  }
+}
