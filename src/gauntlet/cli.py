@@ -99,6 +99,12 @@ def main() -> None:
         help="Specific run ID to resume or output into",
     )
     run_parser.add_argument(
+        "--filter",
+        default=None,
+        type=str,
+        help="Regex pattern to filter scenarios by id (e.g. 'scen_0[78]|scen_09|scen_1[0-9]|scen_20')",
+    )
+    run_parser.add_argument(
         "--output-dir",
         default="results",
         type=str,
@@ -137,6 +143,7 @@ def main() -> None:
             repetitions=args.n,
             call_delay=args.call_delay,
             resume=args.resume,
+            filter_pattern=args.filter,
         )
 
         print(f"\n🚀 Running Gauntlet Evaluation Suite...")

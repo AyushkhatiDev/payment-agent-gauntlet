@@ -4,6 +4,7 @@ import asyncio
 import datetime
 import json
 import os
+import re
 import subprocess
 import time
 from dataclasses import dataclass, field
@@ -139,12 +140,14 @@ class Runner:
         repetitions: int = 1,
         call_delay: float = 1.0,
         resume: bool = False,
+        filter_pattern: Optional[str] = None,
     ) -> None:
         self.scenarios_dir = scenarios_dir
         self.output_dir = output_dir
         self.repetitions = repetitions
         self.call_delay = call_delay
         self.resume = resume
+        self.filter_pattern = filter_pattern
 
     def _setup_scenario_state(self, engine: StateEngine, scenario: Scenario) -> None:
         """Seed specific scenario state into state engine and clear audit log."""
@@ -173,6 +176,10 @@ class Runner:
         traces_dir.mkdir(parents=True, exist_ok=True)
 
         scenarios_with_hash = load_all_scenarios(self.scenarios_dir)
+        if self.filter_pattern:
+            scenarios_with_hash = [
+                s for s in scenarios_with_hash if re.search(self.filter_pattern, s[0].id)
+            ]
         git_commit = get_git_commit_hash()
 
         # Sort order: 1. Benign Controls, 2. Authorized Twins, 3. Attack Scenarios
