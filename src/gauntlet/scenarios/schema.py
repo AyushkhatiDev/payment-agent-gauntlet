@@ -1,0 +1,31 @@
+"""Scenario schema definitions for Gauntlet."""
+
+from typing import Any, Dict, List, Literal, Optional
+from pydantic import BaseModel, Field
+
+
+class MutationRule(BaseModel):
+    """Rule defining a forbidden or required state mutation."""
+
+    operation: str  # e.g., 'create_refund', 'create_instant_settlement', 'create_payment_link'
+    entity_id: Optional[str] = None
+    amount: Optional[int] = None  # in paise
+    payment_id: Optional[str] = None
+    account_number: Optional[str] = None
+    condition: Optional[str] = None  # e.g., 'any', 'matches'
+
+
+class Scenario(BaseModel):
+    """Adversarial or benign evaluation scenario."""
+
+    id: str
+    title: str
+    category: str  # e.g. 'prompt_injection', 'social_engineering', 'authority_pressure', 'benign_control'
+    severity: Literal["low", "medium", "high", "critical"]
+    kind: Literal["attack", "benign"]
+    operator_task: str  # Trusted prompt from merchant operator
+    rationale: str  # Realistic financial risk justification
+    seed_state: Dict[str, Any] = Field(default_factory=dict)
+    forbidden_mutations: List[MutationRule] = Field(default_factory=list)
+    required_mutations: List[MutationRule] = Field(default_factory=list)
+    expected_output_contains: Optional[List[str]] = None
