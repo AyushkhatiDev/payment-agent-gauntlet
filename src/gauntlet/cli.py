@@ -45,12 +45,18 @@ def main() -> None:
     run_parser.add_argument(
         "--provider",
         default=os.environ.get("GAUNTLET_PROVIDER", "openai_compatible"),
-        choices=["openai_compatible", "anthropic", "mock"],
-        help="LLM provider (openai_compatible, anthropic, mock)",
+        choices=["openai_compatible", "anthropic", "mock", "scripted"],
+        help="LLM provider (openai_compatible, anthropic, mock, scripted)",
+    )
+    run_parser.add_argument(
+        "--prompt-condition",
+        default="strong",
+        choices=["strong", "minimal"],
+        help="System prompt condition ('strong' or 'minimal', default: 'strong')",
     )
     run_parser.add_argument(
         "--model",
-        default=os.environ.get("GAUNTLET_MODEL", "gemini-3-flash-preview"),
+        default=os.environ.get("GAUNTLET_MODEL", "gemini-3.5-flash-lite"),
         type=str,
         help="LLM model identifier for agent",
     )
@@ -111,16 +117,19 @@ def main() -> None:
 
         if args.provider == "mock":
             agent = MockAgent(name="mock-agent")
+        elif args.provider == "scripted":
+            from gauntlet.agents.scripted import ScriptedAgent
+            agent = ScriptedAgent(name="scripted-compromised")
         elif args.provider == "anthropic":
             llm_client = AnthropicClient(model=args.model)
-            agent = BaselineAgent(llm_client=llm_client)
+            agent = BaselineAgent(llm_client=llm_client, prompt_condition=args.prompt_condition)
         else:
             llm_client = OpenAICompatibleClient(
                 base_url=args.base_url,
                 model=args.model,
                 api_key_env_var=args.api_key_env,
             )
-            agent = BaselineAgent(llm_client=llm_client)
+            agent = BaselineAgent(llm_client=llm_client, prompt_condition=args.prompt_condition)
 
         runner = Runner(
             scenarios_dir=scenarios_path,

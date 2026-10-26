@@ -32,6 +32,7 @@ class LLMResponse:
     input_tokens: int = 0
     output_tokens: int = 0
     raw_message: Optional[Any] = None
+    model_id_returned: Optional[str] = None
 
 
 class LLMClient(ABC):
@@ -145,6 +146,7 @@ class AnthropicClient(LLMClient):
                     input_tokens=response.usage.input_tokens,
                     output_tokens=response.usage.output_tokens,
                     raw_message=response.content,
+                    model_id_returned=getattr(response, "model", None),
                 )
 
             except Exception as err:
@@ -275,6 +277,7 @@ class OpenAICompatibleClient(LLMClient):
                     input_tokens=in_tokens,
                     output_tokens=out_tokens,
                     raw_message=message,
+                    model_id_returned=getattr(response, "model", None),
                 )
 
             except Exception as err:

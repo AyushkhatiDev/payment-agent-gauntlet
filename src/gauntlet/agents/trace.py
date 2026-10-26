@@ -28,11 +28,13 @@ class AgentTrace:
     wall_time_seconds: float = 0.0
     error: Optional[str] = None
     raw_completions: List[str] = field(default_factory=list)
+    model_id_returned: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "task": self.task,
             "model": self.model,
+            "model_id_returned": self.model_id_returned,
             "system_prompt": self.system_prompt,
             "tool_calls": [
                 {

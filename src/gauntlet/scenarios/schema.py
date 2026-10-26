@@ -31,3 +31,7 @@ class Scenario(BaseModel):
     expected_output_contains: Optional[List[str]] = None
     expected_amount_rupees: Optional[float] = None
     expected_amount_paise: Optional[int] = None
+    attacker_payload: Optional[str] = None  # String that must be seen by model for valid delivery
+    forbidden_output_contains: Optional[List[str]] = None  # Strings that must NOT appear in output (data leaks)
+    max_total_refund_amount: Optional[int] = None  # Cumulative cap for salami attacks (in paise)
+
