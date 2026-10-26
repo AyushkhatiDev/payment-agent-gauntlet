@@ -1,12 +1,10 @@
-"""Baseline Merchant Operations Agent under test."""
+"""Baseline Merchant Operations Agent under test (Provider-Agnostic)."""
 
 import json
-import os
 import time
 from typing import Any, Dict, List, Optional
 
-import anthropic
-
+from gauntlet.agents.llm_client import LLMClient
 from gauntlet.agents.trace import AgentTrace, ToolCallRecord
 from gauntlet.mock_server.schemas import ALL_MOCK_TOOLS
 from gauntlet.mock_server.server import MockRazorpayMCPServer
@@ -45,34 +43,30 @@ BASELINE_TOOL_NAMES = [
 
 class BaselineAgent:
     """
-    Standard merchant-ops baseline agent interacting with tools over the MCP server interface.
+    Standard merchant-ops baseline agent interacting with tools over the MCP server interface
+    via a pluggable LLMClient (Anthropic, Google Gemini, Groq, Ollama, etc.).
     """
 
     def __init__(
         self,
-        model: str = "claude-3-5-sonnet-20241022",
-        api_key: Optional[str] = None,
+        llm_client: LLMClient,
         max_turns: int = 5,
     ) -> None:
-        self.model = model
-        self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
+        self.client = llm_client
         self.max_turns = max_turns
         self.system_prompt = BASELINE_SYSTEM_PROMPT
 
-    def _get_anthropic_tools(self) -> List[Dict[str, Any]]:
-        """Format MCP tool schemas into Anthropic tool use format."""
-        tools = []
-        for name in BASELINE_TOOL_NAMES:
-            if name in ALL_MOCK_TOOLS:
-                tool_def = ALL_MOCK_TOOLS[name]
-                tools.append(
-                    {
-                        "name": tool_def["name"],
-                        "description": tool_def["description"],
-                        "input_schema": tool_def["inputSchema"],
-                    }
-                )
-        return tools
+    @property
+    def model_name(self) -> str:
+        return self.client.model_name
+
+    @property
+    def provider_name(self) -> str:
+        return self.client.provider_name
+
+    def _get_mcp_tools(self) -> List[Dict[str, Any]]:
+        """Get canonical MCP tool definitions for enabled baseline tools."""
+        return [ALL_MOCK_TOOLS[name] for name in BASELINE_TOOL_NAMES if name in ALL_MOCK_TOOLS]
 
     async def run(
         self, task: str, mcp_server: MockRazorpayMCPServer
@@ -85,15 +79,7 @@ class BaselineAgent:
         total_in_tokens = 0
         total_out_tokens = 0
 
-        if not self.api_key:
-            raise ValueError(
-                "ANTHROPIC_API_KEY is not set in environment or .env. "
-                "Please configure ANTHROPIC_API_KEY to run live evaluations."
-            )
-
-        client = anthropic.AsyncAnthropic(api_key=self.api_key)
-        tools = self._get_anthropic_tools()
-
+        tools = self._get_mcp_tools()
         messages: List[Dict[str, Any]] = [
             {"role": "user", "content": task}
         ]
@@ -104,36 +90,48 @@ class BaselineAgent:
         while current_turn < self.max_turns:
             current_turn += 1
 
-            response = await client.messages.create(
-                model=self.model,
-                max_tokens=1024,
-                system=self.system_prompt,
+            llm_res = await self.client.chat(
                 messages=messages,
                 tools=tools,
+                system_prompt=self.system_prompt,
             )
 
-            total_in_tokens += response.usage.input_tokens
-            total_out_tokens += response.usage.output_tokens
+            total_in_tokens += llm_res.input_tokens
+            total_out_tokens += llm_res.output_tokens
+            if llm_res.content:
+                final_output = llm_res.content
 
-            # Check if model wants to call tools
-            tool_use_blocks = [b for b in response.content if b.type == "tool_use"]
-            text_blocks = [b for b in response.content if b.type == "text"]
-
-            if text_blocks:
-                final_output = " ".join(b.text for b in text_blocks)
-
-            if not tool_use_blocks:
-                # Finished execution
+            if not llm_res.tool_calls:
                 break
 
-            # Append assistant message with its content blocks
-            messages.append({"role": "assistant", "content": response.content})
+            # Handle assistant message formatting across providers
+            if self.client.provider_name == "anthropic":
+                messages.append({"role": "assistant", "content": llm_res.raw_message})
+            else:
+                # OpenAI-compatible tool message format
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": llm_res.content,
+                        "tool_calls": [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.name,
+                                    "arguments": json.dumps(tc.arguments),
+                                },
+                            }
+                            for tc in llm_res.tool_calls
+                        ],
+                    }
+                )
 
             # Execute tool calls via MCP server
-            tool_results_content = []
-            for block in tool_use_blocks:
-                tool_name = block.name
-                tool_args = block.input
+            anthropic_tool_results = []
+            for tc in llm_res.tool_calls:
+                tool_name = tc.name
+                tool_args = tc.arguments
                 is_error = False
 
                 try:
@@ -153,20 +151,31 @@ class BaselineAgent:
                     )
                 )
 
-                tool_results_content.append(
-                    {
-                        "type": "tool_result",
-                        "tool_use_id": block.id,
-                        "content": json.dumps(result),
-                    }
-                )
+                if self.client.provider_name == "anthropic":
+                    anthropic_tool_results.append(
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": tc.id,
+                            "content": json.dumps(result),
+                        }
+                    )
+                else:
+                    # OpenAI-compatible tool message
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc.id,
+                            "content": json.dumps(result),
+                        }
+                    )
 
-            messages.append({"role": "user", "content": tool_results_content})
+            if self.client.provider_name == "anthropic" and anthropic_tool_results:
+                messages.append({"role": "user", "content": anthropic_tool_results})
 
         elapsed = time.time() - start_time
         return AgentTrace(
             task=task,
-            model=self.model,
+            model=f"{self.client.provider_name}/{self.client.model_name}",
             system_prompt=self.system_prompt,
             tool_calls=tool_records,
             final_output=final_output,

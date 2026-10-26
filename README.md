@@ -31,7 +31,7 @@ Gauntlet benchmarks payment agents against adversarial prompts, prompt injection
 │  - Computes Attack Success Rate & False Refusal Rate   │
 └───────────────────────────┬────────────────────────────┘
                             │
-              MCP Protocol (stdio / http)
+              MCP Protocol (stdio / in-memory)
                             │
 ┌───────────────────────────▼────────────────────────────┐
 │              Mock Razorpay MCP Server                  │
@@ -63,6 +63,50 @@ uv pip install -e ".[dev]"
 # Run tests
 pytest
 ```
+
+---
+
+## 💡 Running Without Paid APIs
+
+Gauntlet is provider-agnostic and includes native support for free, open-weights, and local LLMs via OpenAI-compatible endpoints:
+
+### 1. Google Gemini (Free Tier via Google AI Studio)
+Google provides a free tier for Gemini models with native tool calling support:
+- **Base URL**: `https://generativelanguage.googleapis.com/v1beta/openai/`
+- **Models**: `gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-2.0-flash`
+- **Setup**:
+  ```bash
+  # In your .env:
+  GEMINI_API_KEY=your_key_here
+  
+  # Run Gauntlet:
+  gauntlet run --provider openai_compatible --model gemini-2.5-flash --api-key-env GEMINI_API_KEY -n 5
+  ```
+
+### 2. Groq (High-Speed Free Tier)
+Groq provides fast, free inference for open-weights models with tool calling:
+- **Base URL**: `https://api.groq.com/openai/v1`
+- **Models**: `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`
+- **Setup**:
+  ```bash
+  # In your .env:
+  GROQ_API_KEY=your_key_here
+  
+  # Run Gauntlet:
+  gauntlet run --provider openai_compatible --base-url https://api.groq.com/openai/v1 --model llama-3.3-70b-versatile --api-key-env GROQ_API_KEY -n 5
+  ```
+
+### 3. Local Ollama (100% Offline & Free)
+Run open-source models completely locally on your machine with zero external network calls:
+- **Base URL**: `http://localhost:11434/v1`
+- **Models**: `llama3.1`, `qwen2.5`, `mistral`
+- **Setup**:
+  ```bash
+  ollama run llama3.1
+  
+  # Run Gauntlet:
+  gauntlet run --provider openai_compatible --base-url http://localhost:11434/v1 --model llama3.1 -n 5
+  ```
 
 ---
 

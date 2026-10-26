@@ -1,11 +1,17 @@
-"""CLI entrypoint for Gauntlet."""
+"""CLI entrypoint for Gauntlet with provider-agnostic runner."""
 
 import argparse
 import asyncio
+import os
 from pathlib import Path
 import sys
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from gauntlet.agents.baseline import BaselineAgent
+from gauntlet.agents.llm_client import AnthropicClient, OpenAICompatibleClient
 from gauntlet.agents.mock_agent import MockAgent
 from gauntlet.mock_server.server import MockRazorpayMCPServer
 from gauntlet.runner.runner import Runner, format_summary_table
@@ -37,16 +43,30 @@ def main() -> None:
         help="Path to scenarios directory (default: scenarios)",
     )
     run_parser.add_argument(
-        "--agent",
-        default="baseline",
-        choices=["baseline", "mock"],
-        help="Agent under test (baseline, mock)",
+        "--provider",
+        default=os.environ.get("GAUNTLET_PROVIDER", "openai_compatible"),
+        choices=["openai_compatible", "anthropic", "mock"],
+        help="LLM provider (openai_compatible, anthropic, mock)",
     )
     run_parser.add_argument(
         "--model",
-        default="claude-3-5-sonnet-20241022",
+        default=os.environ.get("GAUNTLET_MODEL", "gemini-2.5-flash"),
         type=str,
         help="LLM model identifier for agent",
+    )
+    run_parser.add_argument(
+        "--base-url",
+        default=os.environ.get(
+            "GAUNTLET_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai/"
+        ),
+        type=str,
+        help="Base URL for OpenAI-compatible endpoint",
+    )
+    run_parser.add_argument(
+        "--api-key-env",
+        default=os.environ.get("GAUNTLET_API_KEY_ENV", "GEMINI_API_KEY"),
+        type=str,
+        help="Environment variable name containing the API key",
     )
     run_parser.add_argument(
         "-n",
@@ -54,6 +74,23 @@ def main() -> None:
         default=1,
         type=int,
         help="Number of repetitions per scenario (default: 1)",
+    )
+    run_parser.add_argument(
+        "--call-delay",
+        default=float(os.environ.get("GAUNTLET_CALL_DELAY", "1.0")),
+        type=float,
+        help="Delay in seconds between calls for free-tier rate limits (default: 1.0)",
+    )
+    run_parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume an existing run, skipping completed scenario traces",
+    )
+    run_parser.add_argument(
+        "--run-id",
+        type=str,
+        default=None,
+        help="Specific run ID to resume or output into",
     )
     run_parser.add_argument(
         "--output-dir",
@@ -72,23 +109,40 @@ def main() -> None:
         scenarios_path = Path(args.scenarios)
         output_path = Path(args.output_dir)
 
-        if args.agent == "baseline":
-            agent = BaselineAgent(model=args.model)
+        if args.provider == "mock":
+            agent = MockAgent(name="mock-agent")
+        elif args.provider == "anthropic":
+            llm_client = AnthropicClient(model=args.model)
+            agent = BaselineAgent(llm_client=llm_client)
         else:
-            agent = MockAgent(name="mock-dryrun")
+            llm_client = OpenAICompatibleClient(
+                base_url=args.base_url,
+                model=args.model,
+                api_key_env_var=args.api_key_env,
+            )
+            agent = BaselineAgent(llm_client=llm_client)
 
         runner = Runner(
             scenarios_dir=scenarios_path,
             output_dir=output_path,
             repetitions=args.n,
+            call_delay=args.call_delay,
+            resume=args.resume,
         )
 
         print(f"\n🚀 Running Gauntlet Evaluation Suite...")
-        print(f"   Agent: {args.agent} (Model: {args.model})")
+        print(f"   Provider: {args.provider}")
+        print(f"   Model: {args.model}")
+        if args.provider == "openai_compatible":
+            print(f"   Base URL: {args.base_url}")
+            print(f"   Key Env: {args.api_key_env}")
         print(f"   Scenarios: {scenarios_path}")
-        print(f"   Repetitions: {args.n}\n")
+        print(f"   Repetitions (N): {args.n}")
+        print(f"   Call Delay: {args.call_delay}s\n")
 
-        summary = asyncio.run(runner.run(agent=agent, model_name=args.model))
+        summary = asyncio.run(
+            runner.run(agent=agent, provider=args.provider, model_name=args.model, run_id=args.run_id)
+        )
         table_output = format_summary_table(summary)
         print("\n" + table_output + "\n")
         print(f"Results and raw traces saved to: {output_path / summary.run_id}\n")

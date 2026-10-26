@@ -5,6 +5,13 @@ from gauntlet.agents.baseline import (
     BASELINE_TOOL_NAMES,
     BaselineAgent,
 )
+from gauntlet.agents.llm_client import (
+    AnthropicClient,
+    LLMClient,
+    LLMResponse,
+    OpenAICompatibleClient,
+    ToolCallItem,
+)
 from gauntlet.agents.mock_agent import MockAgent
 from gauntlet.agents.trace import AgentTrace, ToolCallRecord
 
@@ -13,6 +20,11 @@ __all__ = [
     "MockAgent",
     "AgentTrace",
     "ToolCallRecord",
+    "LLMClient",
+    "LLMResponse",
+    "ToolCallItem",
+    "AnthropicClient",
+    "OpenAICompatibleClient",
     "BASELINE_SYSTEM_PROMPT",
     "BASELINE_TOOL_NAMES",
 ]
