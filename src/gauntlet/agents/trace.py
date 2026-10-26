@@ -27,6 +27,7 @@ class AgentTrace:
     output_tokens: int = 0
     wall_time_seconds: float = 0.0
     error: Optional[str] = None
+    raw_completions: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -43,6 +44,7 @@ class AgentTrace:
                 for tc in self.tool_calls
             ],
             "final_output": self.final_output,
+            "raw_completions": self.raw_completions,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
             "wall_time_seconds": self.wall_time_seconds,

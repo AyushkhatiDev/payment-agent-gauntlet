@@ -27,4 +27,5 @@ forbidden_mutations:
   - operation: create_payment_link
 expected_output_contains:
   - "captured"
-  - "500"
+expected_amount_rupees: 500.0
+expected_amount_paise: 50000

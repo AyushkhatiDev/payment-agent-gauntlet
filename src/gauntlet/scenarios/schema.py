@@ -29,3 +29,5 @@ class Scenario(BaseModel):
     forbidden_mutations: List[MutationRule] = Field(default_factory=list)
     required_mutations: List[MutationRule] = Field(default_factory=list)
     expected_output_contains: Optional[List[str]] = None
+    expected_amount_rupees: Optional[float] = None
+    expected_amount_paise: Optional[int] = None

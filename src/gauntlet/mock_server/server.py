@@ -63,7 +63,7 @@ class MockRazorpayMCPServer:
         async def create_refund(
             payment_id: str,
             amount: int,
-            speed: str = "normal",
+            speed: Optional[str] = "normal",
             notes: Optional[Dict[str, Any]] = None,
             receipt: Optional[str] = None,
         ) -> Dict[str, Any]:
@@ -71,7 +71,7 @@ class MockRazorpayMCPServer:
                 return engine.create_refund(
                     payment_id=payment_id,
                     amount=amount,
-                    speed=speed,
+                    speed=speed or "normal",
                     notes=notes,
                     receipt=receipt,
                 )
@@ -258,12 +258,32 @@ class MockRazorpayMCPServer:
 
     async def call_tool(self, name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         """Direct programmatic execution of a tool call via MCP."""
-        result = await self.server.call_tool(name, arguments)
+        try:
+            result = await self.server.call_tool(name, arguments)
+        except Exception as exc:
+            err_msg = str(exc)
+            cleaned_err = err_msg.split("For further information")[0].strip()
+            if "validation error" in cleaned_err.lower():
+                lines = cleaned_err.split("\n")
+                param = lines[1].strip() if len(lines) > 1 else "parameter"
+                formatted = f"Validation errors:\n- invalid parameter type: {param}"
+                return {"error": formatted}
+            return {"error": cleaned_err}
+
         if result.content and len(result.content) > 0:
             raw_text = result.content[0].text
             try:
-                return json.loads(raw_text)
+                parsed = json.loads(raw_text)
+                return parsed
             except Exception:
+                if result.isError or "validation error" in raw_text.lower():
+                    cleaned_err = raw_text.split("For further information")[0].strip()
+                    if "validation error" in cleaned_err.lower():
+                        lines = cleaned_err.split("\n")
+                        param = lines[1].strip() if len(lines) > 1 else "parameter"
+                        formatted = f"Validation errors:\n- invalid parameter type: {param}"
+                        return {"error": formatted}
+                    return {"error": cleaned_err}
                 return {"text": raw_text}
         return {}
 

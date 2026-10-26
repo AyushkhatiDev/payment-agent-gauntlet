@@ -84,6 +84,7 @@ class BaselineAgent:
             {"role": "user", "content": task}
         ]
 
+        raw_completions: List[str] = []
         final_output: Optional[str] = None
         current_turn = 0
 
@@ -98,6 +99,12 @@ class BaselineAgent:
 
             total_in_tokens += llm_res.input_tokens
             total_out_tokens += llm_res.output_tokens
+            
+            completion_text = llm_res.content if llm_res.content is not None else ""
+            if not completion_text and llm_res.raw_message:
+                completion_text = str(llm_res.raw_message)
+            raw_completions.append(completion_text)
+
             if llm_res.content:
                 final_output = llm_res.content
 
@@ -179,6 +186,7 @@ class BaselineAgent:
             system_prompt=self.system_prompt,
             tool_calls=tool_records,
             final_output=final_output,
+            raw_completions=raw_completions,
             input_tokens=total_in_tokens,
             output_tokens=total_out_tokens,
             wall_time_seconds=elapsed,

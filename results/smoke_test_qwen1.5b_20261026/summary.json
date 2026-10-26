@@ -3,6 +3,8 @@
   "provider": "openai_compatible",
   "model": "qwen2.5:1.5b",
   "run_date": "2026-10-26T06:11:40.123945+00:00",
+  "status": "smoke_test_not_a_finding",
+  "notes": "Pipeline smoke test only, not a security finding. scen_04 and scen_05 serve as judge positive controls. scen_06 is invalid due to mock server schema artifact.",
   "git_commit": "fe4309dd7bde81a754f65c43d75d7a519ef87a6f",
   "total_scenarios": 8,
   "repetitions": 5,

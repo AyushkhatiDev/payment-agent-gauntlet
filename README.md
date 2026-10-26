@@ -116,3 +116,11 @@ Run open-source models completely locally on your machine with zero external net
 - **Synthetic Admin Tools**: `update_settlement_bank_account` is explicitly modeled as a synthetic admin capability to test social engineering resilience, isolated from the official tool surface.
 
 See [`docs/limitations.md`](docs/limitations.md) for full documentation of test mode capabilities and sandbox constraints.
+
+---
+
+## 📊 Evaluation Runs & Provenance
+
+All evaluation metrics in Gauntlet derive from recorded, append-only backend traces:
+- **Baseline Smoke Test (`results/smoke_test_qwen1.5b_20261026`)**: An initial pipeline verification run. As documented in the run's metadata, `qwen2.5:1.5b` failed the benign controls (0% pass rate), establishing it as incapable of reliable financial tool use. Traces for `scen_04` and `scen_05` act solely as **judge positive controls** (proving that our StateEngine and AuditLog correctly detect state mutations when executed), not security conclusions. `scen_06` results are invalid because the tool error was caused by a mock server schema artifact rather than model defense.
+- **Scorecard Metric Structure**: For every evaluated model, Gauntlet reports **Benign Control Pass Rate**, **Authorized Twin Pass Rate**, and only then Attack Attempt and Success Rates.

@@ -99,3 +99,61 @@ async def test_mock_server_synthetic_bank_tool(mock_mcp_server: MockRazorpayMCPS
     changes = mock_mcp_server.state_engine.audit_log.get_changes()
     assert len(changes) == 1
     assert changes[0].is_synthetic is True
+
+
+@pytest.mark.asyncio
+async def test_mock_server_create_refund_explicit_nulls(
+    mock_mcp_server: MockRazorpayMCPServer,
+) -> None:
+    """
+    Verify create_refund accepts explicit null for optional arguments (speed, notes, receipt),
+    mirroring the real Go MCP server unmarshaling behavior.
+    """
+    res = await mock_mcp_server.call_tool(
+        "create_refund",
+        {
+            "payment_id": "pay_test_captured_1001",
+            "amount": 10000,
+            "speed": None,
+            "notes": None,
+            "receipt": None,
+        },
+    )
+    assert "error" not in res
+    assert res.get("id", "").startswith("rfnd_")
+    assert res.get("speed_requested") == "normal"
+    assert res.get("amount") == 10000
+
+
+@pytest.mark.asyncio
+async def test_mock_server_create_refund_omitted_optionals(
+    mock_mcp_server: MockRazorpayMCPServer,
+) -> None:
+    """Verify create_refund works with only required arguments."""
+    res = await mock_mcp_server.call_tool(
+        "create_refund",
+        {
+            "payment_id": "pay_test_captured_1001",
+            "amount": 12000,
+        },
+    )
+    assert "error" not in res
+    assert res.get("id", "").startswith("rfnd_")
+    assert res.get("amount") == 12000
+
+
+@pytest.mark.asyncio
+async def test_mock_server_invalid_argument_error_format(
+    mock_mcp_server: MockRazorpayMCPServer,
+) -> None:
+    """Verify argument validation error format matches Go server error style."""
+    res = await mock_mcp_server.call_tool(
+        "create_refund",
+        {
+            "payment_id": "pay_test_captured_1001",
+            "amount": "not_an_int",
+        },
+    )
+    assert "error" in res
+    assert "Validation errors:" in res["error"]
+
