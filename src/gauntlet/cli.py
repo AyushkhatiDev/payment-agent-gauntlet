@@ -50,7 +50,7 @@ def main() -> None:
     )
     run_parser.add_argument(
         "--model",
-        default=os.environ.get("GAUNTLET_MODEL", "gemini-2.5-flash"),
+        default=os.environ.get("GAUNTLET_MODEL", "gemini-3-flash-preview"),
         type=str,
         help="LLM model identifier for agent",
     )

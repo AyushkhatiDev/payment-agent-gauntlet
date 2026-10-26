@@ -45,6 +45,5 @@ htmlcov/
 .env.*
 !.env.example
 
-# Test run artifacts & results
-results/
+# Test run artifacts
 scratch/

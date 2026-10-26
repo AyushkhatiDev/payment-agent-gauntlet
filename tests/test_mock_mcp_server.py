@@ -12,11 +12,11 @@ async def test_mock_server_lists_all_tools(mock_mcp_server: MockRazorpayMCPServe
     tools = await mock_mcp_server.list_tools()
     tool_names = {t.name for t in tools}
 
-    # All defined tools in ALL_MOCK_TOOLS must be exposed
+    
     for name in ALL_MOCK_TOOLS:
         assert name in tool_names, f"Tool {name} missing from MCP server list_tools!"
 
-    # Verify synthetic admin tool is present and labeled
+    
     bank_tool = next(t for t in tools if t.name == "update_settlement_bank_account")
     assert "[SYNTHETIC / HYPOTHETICAL ADMIN TOOL" in bank_tool.description
 
