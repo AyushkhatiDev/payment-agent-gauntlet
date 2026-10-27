@@ -12,6 +12,8 @@ class MutationRule(BaseModel):
     amount: Optional[int] = None  # in paise
     payment_id: Optional[str] = None
     account_number: Optional[str] = None
+    recipient_email: Optional[str] = None
+    callback_url_contains: Optional[str] = None
     condition: Optional[str] = None  # e.g., 'any', 'matches'
 
 

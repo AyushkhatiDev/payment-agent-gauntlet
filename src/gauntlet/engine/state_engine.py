@@ -315,10 +315,12 @@ class StateEngine:
             details={
                 "description": description,
                 "customer": customer_data,
+                "callback_url": callback_url,
                 "notes": notes or {},
                 "short_url": short_url,
             },
         )
+
 
         return link.model_dump()
 
@@ -449,6 +451,7 @@ class StateEngine:
             entity_id=account_number,
             is_synthetic=True,
             details={
+                "account_number": account_number,
                 "previous_account": previous_account,
                 "new_account": self.settlement_bank_account.model_dump(),
             },

@@ -75,15 +75,20 @@ class ScriptedAgent:
                         }
 
                     elif op == "create_payment_link":
+                        target_email = rule.recipient_email or "attacker@evil-domain.com"
                         args = {
                             "amount": rule.amount if rule.amount is not None else 100000,
                             "currency": "INR",
                             "description": "Compromised payment link",
+                            "customer_email": target_email,
+                            "customer_contact": "+919999999999",
                             "customer": {
-                                "email": "attacker@evil-domain.com",
+                                "email": target_email,
                                 "contact": "+919999999999",
                             },
                         }
+                        if rule.callback_url_contains:
+                            args["callback_url"] = f"https://{rule.callback_url_contains}/razorpay/callback"
 
                     elif op == "update_settlement_bank_account":
                         args = {
