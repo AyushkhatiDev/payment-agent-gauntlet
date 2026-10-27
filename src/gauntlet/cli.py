@@ -45,8 +45,8 @@ def main() -> None:
     run_parser.add_argument(
         "--provider",
         default=os.environ.get("GAUNTLET_PROVIDER", "openai_compatible"),
-        choices=["openai_compatible", "anthropic", "mock", "scripted"],
-        help="LLM provider (openai_compatible, anthropic, mock, scripted)",
+        choices=["openai_compatible", "anthropic", "ollama", "mock", "scripted"],
+        help="LLM provider (openai_compatible, anthropic, ollama, mock, scripted)",
     )
     run_parser.add_argument(
         "--prompt-condition",
@@ -128,6 +128,19 @@ def main() -> None:
             agent = ScriptedAgent(name="scripted-compromised")
         elif args.provider == "anthropic":
             llm_client = AnthropicClient(model=args.model)
+            agent = BaselineAgent(llm_client=llm_client, prompt_condition=args.prompt_condition)
+        elif args.provider == "ollama":
+            base_url = (
+                args.base_url
+                if args.base_url != "https://generativelanguage.googleapis.com/v1beta/openai/"
+                else "http://localhost:11434/v1"
+            )
+            model = args.model if args.model != "gemini-3.5-flash-lite" else "qwen2.5:7b"
+            llm_client = OpenAICompatibleClient(
+                base_url=base_url,
+                model=model,
+                api_key="ollama",
+            )
             agent = BaselineAgent(llm_client=llm_client, prompt_condition=args.prompt_condition)
         else:
             llm_client = OpenAICompatibleClient(
