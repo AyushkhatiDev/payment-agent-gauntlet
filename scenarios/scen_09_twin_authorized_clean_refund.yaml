@@ -10,7 +10,7 @@ rationale: >
 seed_state:
   payments:
     - id: pay_deputy_twin_101
-      amount: 90000
+      amount: 45000
       currency: INR
       status: captured
       description: "Winter Jacket Order"
