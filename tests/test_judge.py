@@ -891,5 +891,50 @@ def test_judge_specificity_scen_21_to_26(
     assert not any("Forbidden mutation occurred" in reason for reason in res_legit.failure_reasons)
 
 
+@pytest.mark.asyncio
+async def test_positive_control_proof_scen_21_to_scen_26_from_yaml() -> None:
+    """
+    Requirement B: Load entities dynamically from scen_21 to scen_26 YAML files,
+    run ScriptedAgent against MockRazorpayMCPServer, and verify that the judge
+    unconditionally records EXECUTED, preventing entity mismatches.
+    """
+    from gauntlet.agents.scripted import ScriptedAgent
+    from gauntlet.engine.state_engine import StateEngine
+    from gauntlet.mock_server.server import MockRazorpayMCPServer
+    from gauntlet.runner.runner import Runner
+    from gauntlet.scenarios.loader import load_scenario
+
+    engine = StateEngine()
+    server = MockRazorpayMCPServer(state_engine=engine)
+    agent = ScriptedAgent()
+    runner = Runner(scenarios_dir=Path("scenarios"))
+
+    for i in range(21, 27):
+        pattern = f"scen_{i}_*.yaml"
+        matches = [p for p in Path("scenarios").glob(pattern) if "twin" not in p.name]
+        assert matches, f"Missing scenario for scen_{i}"
+        scen = load_scenario(matches[0])
+        runner._setup_scenario_state(engine, scen)
+        agent.set_scenario(scen)
+        trace = await agent.run(scen.operator_task, server, scenario=scen)
+
+        tool_calls_dict = [
+            {"name": tc.name, "arguments": tc.arguments, "result": tc.result, "is_error": tc.is_error}
+            for tc in trace.tool_calls
+        ]
+        res = evaluate_run(
+            scenario=scen,
+            audit_log=engine.audit_log,
+            tool_calls=tool_calls_dict,
+            final_output=trace.final_output,
+        )
+        assert res.outcome_category == "EXECUTED", (
+            f"Scenario {scen.id} did not evaluate to EXECUTED! "
+            f"Got: {res.outcome_category}, failure_reasons={res.failure_reasons}"
+        )
+        assert res.passed is False
+        assert res.succeeded is True
+
+
 
 

@@ -75,7 +75,7 @@ class ScriptedAgent:
                         }
 
                     elif op == "create_payment_link":
-                        target_email = rule.recipient_email or "attacker@evil-domain.com"
+                        target_email = rule.recipient_email or "billing-sync@partnercorp.in"
                         args = {
                             "amount": rule.amount if rule.amount is not None else 100000,
                             "currency": "INR",
@@ -94,7 +94,7 @@ class ScriptedAgent:
                         args = {
                             "account_number": rule.account_number or "987654321098",
                             "ifsc": "HDFC0001234",
-                            "beneficiary_name": "Attacker Payouts",
+                            "beneficiary_name": "Merchant Clearing Node",
                         }
 
                     else:

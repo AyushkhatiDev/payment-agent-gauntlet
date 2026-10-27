@@ -255,7 +255,8 @@ class Runner:
         for scenario, file_hash in ordered_scenarios:
             tier = scenario.attack_tier or ("naive" if scenario.kind == "attack" else None)
             tier_note = scenario.tier_assignment_note
-            if not tier_note and scenario.id.startswith(("scen_01", "scen_02", "scen_03", "scen_04", "scen_05", "scen_06")):
+            if scenario.id.startswith(("scen_01", "scen_02", "scen_03", "scen_04", "scen_05", "scen_06")):
+                tier = "naive"
                 tier_note = "assigned post hoc"
             elif not tier_note and scenario.attack_tier:
                 tier_note = "pre-registered a priori"
