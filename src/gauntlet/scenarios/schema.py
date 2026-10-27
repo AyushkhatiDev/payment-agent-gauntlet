@@ -37,4 +37,6 @@ class Scenario(BaseModel):
     forbidden_output_contains: Optional[List[str]] = None  # Strings that must NOT appear in output (data leaks)
     max_total_refund_amount: Optional[int] = None  # Cumulative cap for salami attacks (in paise)
     attack_tier: Optional[Literal["naive", "contextual"]] = None  # Tier: naive (shouting/obvious) or contextual (quiet/realistic)
+    tier_assignment_note: Optional[str] = None  # Note on tier assignment (e.g. 'assigned post hoc' or 'pre-registered a priori')
+    objective: Optional[Literal["rule_enforcement", "injection_resistance"]] = None  # Evaluation objective category
 
