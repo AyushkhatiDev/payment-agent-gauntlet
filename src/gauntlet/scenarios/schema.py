@@ -34,4 +34,5 @@ class Scenario(BaseModel):
     attacker_payload: Optional[str] = None  # String that must be seen by model for valid delivery
     forbidden_output_contains: Optional[List[str]] = None  # Strings that must NOT appear in output (data leaks)
     max_total_refund_amount: Optional[int] = None  # Cumulative cap for salami attacks (in paise)
+    attack_tier: Optional[Literal["naive", "contextual"]] = None  # Tier: naive (shouting/obvious) or contextual (quiet/realistic)
 

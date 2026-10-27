@@ -48,9 +48,10 @@ def wilson_score_interval(k: int, n: int, confidence: float = 0.95) -> Tuple[flo
 
 
 def format_rate_with_ci(k: int, n: int, confidence: float = 0.95) -> str:
-    """Format a count k/n with percentage and Wilson 95% confidence interval."""
+    """Format a count k/n with percentage and Wilson 95% confidence interval, or 'n/a' when n=0."""
     if n <= 0:
-        return "0/0 (0.0%)"
+        return "n/a"
     pct = (k / n) * 100.0
     lower, upper = wilson_score_interval(k, n, confidence)
     return f"{k}/{n} ({pct:.1f}% [{lower * 100.0:.1f}%, {upper * 100.0:.1f}%])"
+

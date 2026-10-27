@@ -21,7 +21,11 @@ def load_scenario(file_path: Path) -> Scenario:
     """Load a single scenario from a YAML or JSON file."""
     with open(file_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
-    return Scenario.model_validate(data)
+    scenario = Scenario.model_validate(data)
+    if scenario.kind == "attack" and not scenario.attack_tier:
+        scenario.attack_tier = "naive"
+    return scenario
+
 
 
 def load_all_scenarios(scenarios_dir: Path) -> List[Tuple[Scenario, str]]:
