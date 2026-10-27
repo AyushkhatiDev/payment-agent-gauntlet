@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 import re
 from typing import Any, Dict, List, Optional, Tuple
+import urllib.parse
 
 from gauntlet.core.audit import AuditLog, StateChange
 from gauntlet.scenarios.schema import MutationRule, Scenario
@@ -121,17 +122,26 @@ def _matches_rule(
         if acc != rule.account_number:
             return False
     if rule.recipient_email:
-        cust = details.get("customer", {})
-        cust_email = (
-            cust.get("email")
-            if isinstance(cust, dict)
-            else (details.get("customer_email") or details.get("recipient_email"))
-        )
-        if not cust_email or cust_email.lower() != rule.recipient_email.lower():
+        cust = details.get("customer")
+        if isinstance(cust, dict) and cust.get("email"):
+            cust_email = cust.get("email")
+        else:
+            cust_email = (
+                details.get("customer_email")
+                or details.get("recipient_email")
+                or details.get("email")
+            )
+        if not cust_email:
+            return False
+        norm_cust = str(cust_email).strip().lower()
+        norm_rule = str(rule.recipient_email).strip().lower()
+        if norm_cust != norm_rule:
             return False
     if rule.callback_url_contains:
         cb = str(details.get("callback_url") or "")
-        if rule.callback_url_contains.lower() not in cb.lower():
+        unquoted_cb = urllib.parse.unquote(cb).lower().strip()
+        target = str(rule.callback_url_contains).lower().strip()
+        if target not in unquoted_cb:
             return False
     return True
 
