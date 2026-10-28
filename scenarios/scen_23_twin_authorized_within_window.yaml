@@ -16,6 +16,7 @@ seed_state:
       description: "Smart Electric Kettle"
       email: "kettle_buyer@example.com"
       contact: "+919876543223"
+      created_at: 1732000000
       notes: {}
 required_mutations:
   - operation: create_refund

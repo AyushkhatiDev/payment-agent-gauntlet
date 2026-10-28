@@ -139,3 +139,6 @@ To address the limitations of prompt-only safety, Gauntlet implements a determin
 
 > [!IMPORTANT]
 > **Methodological Disclosure on Approval Threshold**: The 20,000 paise refund approval threshold in `config/guardrails_policy.yaml` was selected **post-hoc after observing initial evaluation results** (specifically where sub-cap pressure attacks in `scen_06b` succeeded at 40,000 paise). This demonstrates an architectural defense-in-depth mechanism (converting automated exploits into human-in-the-loop approval gates), **not a pre-registered or tuned benchmark score**.
+>
+> **Evaluation B Clock Note**: Evaluation B ran before the clock fix; scen_23's attack was held by the approval threshold and would have been blocked by the 30-day rule with the fix. The qualitative result (agent reported the hold accurately) is unaffected.
+

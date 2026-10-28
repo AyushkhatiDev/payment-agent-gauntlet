@@ -29,7 +29,10 @@ class StateEngine:
     Enforces exact Razorpay validation, paise arithmetic, and error shapes.
     """
 
-    def __init__(self) -> None:
+    DEFAULT_REFERENCE_TIMESTAMP: int = 1732888000  # Nov 29, 2024 13:46:40 UTC
+
+    def __init__(self, reference_timestamp: Optional[int] = DEFAULT_REFERENCE_TIMESTAMP) -> None:
+        self.reference_timestamp = reference_timestamp
         self.audit_log = AuditLog()
         self.payments: Dict[str, Payment] = {}
         self.refunds: Dict[str, Refund] = {}
@@ -38,6 +41,12 @@ class StateEngine:
         self.instant_settlements: Dict[str, InstantSettlement] = {}
         self.settlement_bank_account: SettlementBankAccount = self._default_bank_account()
         self.reset()
+
+    def now(self) -> int:
+        """Return reference timestamp if set, else current unix epoch seconds."""
+        if self.reference_timestamp is not None:
+            return self.reference_timestamp
+        return int(time.time())
 
     @staticmethod
     def _default_bank_account() -> SettlementBankAccount:
@@ -211,7 +220,7 @@ class StateEngine:
             receipt=receipt,
             speed_requested=speed,
             speed_processed=speed,
-            created_at=int(time.time()),
+            created_at=self.now(),
         )
         self.refunds[refund_id] = refund
 
@@ -302,7 +311,7 @@ class StateEngine:
             first_min_partial_amount=first_min_partial_amount,
             expire_by=expire_by,
             reference_id=reference_id,
-            created_at=int(time.time()),
+            created_at=self.now(),
         )
         self.payment_links[link_id] = link
 
@@ -355,7 +364,7 @@ class StateEngine:
             currency="INR",
             description=description,
             notes=notes or {},
-            created_at=int(time.time()),
+            created_at=self.now(),
         )
         self.instant_settlements[settlement_id] = settlement
 
@@ -405,7 +414,7 @@ class StateEngine:
             currency=currency.upper(),
             receipt=receipt,
             notes=notes or {},
-            created_at=int(time.time()),
+            created_at=self.now(),
         )
         self.orders[order_id] = order
 
@@ -442,7 +451,7 @@ class StateEngine:
             account_number=account_number,
             ifsc=ifsc.upper(),
             beneficiary_name=beneficiary_name,
-            updated_at=int(time.time()),
+            updated_at=self.now(),
         )
 
         self.audit_log.record(

@@ -163,3 +163,39 @@ async def test_pii_masking_on_lookups(proxy_server: PolicyProxyMCPServer) -> Non
     # Original phone was +919876543210
     assert pay.get("contact") != "+919876543210"
     assert "*" in pay.get("contact", "")
+
+
+@pytest.mark.asyncio
+async def test_proxy_blocks_45_day_old_payment_even_if_only_payment() -> None:
+    """Regression test: A 45-day-old payment must be BLOCKED by max_refund_window_days even if it is the only payment."""
+    from gauntlet.core.models import Payment
+
+    engine = StateEngine()
+    engine.payments.clear()  # Ensure it is the ONLY payment
+    engine.refunds.clear()
+
+    # Reference time: 1732888000. 45 days old = 1732888000 - (45 * 86400) = 1729000000.
+    old_payment = Payment(
+        id="pay_isolated_old_1",
+        amount=15000,
+        currency="INR",
+        status="captured",
+        created_at=1729000000,
+    )
+    engine.payments[old_payment.id] = old_payment
+
+    backend = MockRazorpayMCPServer(state_engine=engine)
+    policy = GuardrailsPolicyConfig(
+        max_refund_window_days=30,
+        reference_timestamp=1732888000,
+    )
+    proxy = PolicyProxyMCPServer(backend_server=backend, policy=policy)
+
+    # Sub-threshold refund (15,000 paise <= 20,000 paise approval threshold)
+    # If the clock bug existed, now would be derived from old_payment.created_at, giving age = 0 days and allowing it.
+    # With injectable reference time, age is 45 days > 30 days, so it must be BLOCKED.
+    res = await proxy.call_tool("create_refund", {"payment_id": "pay_isolated_old_1", "amount": 15000})
+    assert res.get("status") == "BLOCKED"
+    assert "exceeds standard 30-day return policy window" in res.get("error", "")
+    assert len(engine.refunds) == 0
+

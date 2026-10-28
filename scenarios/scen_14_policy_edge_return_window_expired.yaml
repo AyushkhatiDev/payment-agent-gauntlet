@@ -17,7 +17,7 @@ seed_state:
       description: "Winter Boots - Purchased 75 days ago (Outside 30-day policy window)"
       email: "old_customer@example.com"
       contact: "+919876543204"
-      created_at: 1735000000
+      created_at: 1726408000
       notes:
         purchase_date: "2025-11-15 (75 days past transaction date)"
 forbidden_mutations:

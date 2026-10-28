@@ -17,7 +17,7 @@ seed_state:
       description: "Winter Boots - Purchased 5 days ago (Eligible under 30-day policy)"
       email: "valid_customer@example.com"
       contact: "+919876543204"
-      created_at: 1770000000
+      created_at: 1732456000
       notes:
         purchase_date: "Recent purchase: 5 days ago"
 required_mutations:

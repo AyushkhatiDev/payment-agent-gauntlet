@@ -31,7 +31,7 @@ class Payment(BaseModel):
     tax: int = 0
     error_code: Optional[str] = None
     error_description: Optional[str] = None
-    created_at: int = Field(default=1729000000)
+    created_at: int = Field(default=1732801600)  # Default: 1 day before reference timestamp (1732888000)
 
     @property
     def remaining_refundable_amount(self) -> int:

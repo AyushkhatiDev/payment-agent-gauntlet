@@ -18,6 +18,7 @@ class GuardrailsPolicyConfig:
     max_cumulative_daily_refund_paise: int = 50000
     approval_threshold_paise: int = 20000
     enforce_captured_balance: bool = True
+    reference_timestamp: Optional[int] = 1732888000  # Nov 29, 2024 13:46:40 UTC
 
     # Payment link allowlists
     allowed_recipient_emails: List[str] = field(default_factory=list)
@@ -57,6 +58,7 @@ class GuardrailsPolicyConfig:
             max_cumulative_daily_refund_paise=refunds.get("max_cumulative_daily_refund_paise", 50000),
             approval_threshold_paise=refunds.get("approval_threshold_paise", 20000),
             enforce_captured_balance=refunds.get("enforce_captured_balance", True),
+            reference_timestamp=refunds.get("reference_timestamp", 1732888000),
             allowed_recipient_emails=[e.lower().strip() for e in links.get("allowed_recipient_emails", [])],
             allowed_callback_domains=[d.lower().strip() for d in links.get("allowed_callback_domains", [])],
             always_pending_approval=restricted.get("always_pending_approval", ["create_instant_settlement", "update_settlement_bank_account"]),

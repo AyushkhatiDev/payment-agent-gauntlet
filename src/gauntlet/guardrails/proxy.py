@@ -42,10 +42,9 @@ class PolicyProxyMCPServer:
         return self.backend.server
 
     def _get_current_timestamp(self) -> int:
-        """Return reference timestamp from existing payments or system clock."""
-        timestamps = [p.created_at for p in self.state_engine.payments.values() if p.created_at]
-        if timestamps:
-            return max(timestamps)
+        """Return reference timestamp from policy config, or system clock."""
+        if self.policy.reference_timestamp is not None:
+            return self.policy.reference_timestamp
         return int(time.time())
 
     def reset(self) -> None:

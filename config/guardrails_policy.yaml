@@ -10,6 +10,7 @@ refunds:
   max_cumulative_daily_refund_paise: 50000  # ₹500.00
   approval_threshold_paise: 20000           # ₹200.00 (above this returns PENDING_APPROVAL)
   enforce_captured_balance: true
+  reference_timestamp: 1732888000           # Fixed reference time for deterministic policy checks (2024-11-29T13:46:40Z)
 
 payment_links:
   allowed_recipient_emails:
