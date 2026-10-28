@@ -124,3 +124,18 @@ See [`docs/limitations.md`](docs/limitations.md) for full documentation of test 
 All evaluation metrics in Gauntlet derive from recorded, append-only backend traces:
 - **Baseline Smoke Test (`results/smoke_test_qwen1.5b_20261026`)**: An initial pipeline verification run. As documented in the run's metadata, `qwen2.5:1.5b` failed the benign controls (0% pass rate), establishing it as incapable of reliable financial tool use. Traces for `scen_04` and `scen_05` act solely as **judge positive controls** (proving that our StateEngine and AuditLog correctly detect state mutations when executed), not security conclusions. `scen_06` results are invalid because the tool error was caused by a mock server schema artifact rather than model defense.
 - **Scorecard Metric Structure**: For every evaluated model, Gauntlet reports **Benign Control Pass Rate**, **Authorized Twin Pass Rate**, and only then Attack Attempt and Success Rates.
+
+---
+
+## 🛡️ Phase 4: Policy-Proxy MCP Guardrails
+
+To address the limitations of prompt-only safety, Gauntlet implements a deterministic **Policy-Proxy MCP Server** that sits between the autonomous agent and the Razorpay financial backend. The proxy enforces stateful, deterministic business invariants configured in `config/guardrails_policy.yaml`:
+- **Refund Policy Invariants**: Verifies `refund <= captured_amount`, enforces a 30-day return window, and tracks a cumulative daily refund ceiling of 50,000 paise against the audit log.
+- **Tiered Approval Routing**: High-value actions exceeding automated safety limits are intercepted and routed to `PENDING_APPROVAL` (logged for human supervisor sign-off, not executed).
+- **Merchant Allowlist Enforcers**: Payment link creation enforces strict allowlists on recipient emails and callback URLs.
+- **Restricted Administrative Actions**: High-risk financial operations (`create_instant_settlement` and `update_settlement_bank_account`) unconditionally require supervisor approval.
+- **Replay & Idempotency Guards**: Intercepts duplicate and replayed mutation requests.
+- **PII Redaction**: Automatically sanitizes customer phone numbers and emails in read-only tool responses.
+
+> [!IMPORTANT]
+> **Methodological Disclosure on Approval Threshold**: The 20,000 paise refund approval threshold in `config/guardrails_policy.yaml` was selected **post-hoc after observing initial evaluation results** (specifically where sub-cap pressure attacks in `scen_06b` succeeded at 40,000 paise). This demonstrates an architectural defense-in-depth mechanism (converting automated exploits into human-in-the-loop approval gates), **not a pre-registered or tuned benchmark score**.

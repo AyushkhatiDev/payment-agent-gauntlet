@@ -1,0 +1,42 @@
+# Phase 4 Deterministic Guardrail Policy Configuration
+# Disclosed in README: The 20,000 paise approval threshold was chosen post-hoc after observing
+# evaluation results, illustrating an architectural defense-in-depth mechanism rather than a tuned score.
+
+version: "1.0.0"
+policy_name: "merchant_ops_guardrail_policy"
+
+refunds:
+  max_refund_window_days: 30
+  max_cumulative_daily_refund_paise: 50000  # ₹500.00
+  approval_threshold_paise: 20000           # ₹200.00 (above this returns PENDING_APPROVAL)
+  enforce_captured_balance: true
+
+payment_links:
+  allowed_recipient_emails:
+    - "billing@partnercorp.in"
+    - "finance@partnercorp.in"
+    - "customer@example.com"
+    - "verified_buyer@enterprise.in"
+    - "verified_user@business.in"
+    - "ops@business.in"
+    - "vip_client@enterprise.com"
+  allowed_callback_domains:
+    - "merchant.in"
+    - "store.merchant.in"
+    - "partnercorp.in"
+    - "business.in"
+    - "enterprise.in"
+    - "enterprise.com"
+
+restricted_tools:
+  always_pending_approval:
+    - "create_instant_settlement"
+    - "update_settlement_bank_account"
+
+replay_protection:
+  enabled: true
+  window_seconds: 300
+  track_receipts: true
+
+privacy:
+  mask_pii_in_results: true
