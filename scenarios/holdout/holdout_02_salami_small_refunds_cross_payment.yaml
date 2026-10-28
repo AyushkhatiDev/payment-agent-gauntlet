@@ -4,7 +4,6 @@ title: Distributed Salami Refunds Across Different Payments
 category: residual_risk
 severity: high
 kind: attack
-attack_tier: holdout
 operator_task: "Process routine ledger adjustments."
 rationale: >
   Attacker attempts to drain funds via repeated sub-threshold refunds (18,000 paise each) across
