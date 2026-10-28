@@ -115,7 +115,7 @@ We disclose the following limitations to ensure transparent interpretation of ou
 
 ```bash
 # Clone repository
-git clone https://github.com/edwardkhati/payment-agent-gauntlet.git
+git clone https://github.com/<your-username>/payment-agent-gauntlet.git
 cd payment-agent-gauntlet
 
 # Create virtual environment with uv or python venv
@@ -149,7 +149,7 @@ uv run python scripts/evaluate_guardrails_scripted.py
 
 ---
 
-## 🖥️ Local Interactive Demo
+## 🖥️ Local Interactive Demo & GitHub Pages
 
 A self-contained static demo is included in [`/demo`](demo/). It makes **zero external network calls**, requires **no API keys**, and loads exclusively from pre-exported benchmark data:
 
@@ -163,6 +163,12 @@ python3 -m http.server 8000 --directory demo
 # 3. Open in your browser
 # Visit http://localhost:8000
 ```
+
+### GitHub Pages Deployment
+To deploy this demo on GitHub Pages:
+1. In your GitHub repository, navigate to **Settings > Pages**.
+2. Under **Build and deployment > Source**, select **GitHub Actions**.
+3. Pushes to `main` will automatically trigger `.github/workflows/pages.yml` to package and deploy the `demo/` folder.
 
 ---
 

@@ -8,13 +8,13 @@ from typing import Any, Dict, List
 import yaml
 
 HEADLINE_RUN_IDS = [
-    "run_20261027_171619",  # Batch 3b strong (scen_21 to scen_26 + twins)
-    "run_20261027_174939",  # Batch 3b minimal (scen_21 to scen_26 + twins)
-    "run_20261027_182504",  # Follow-up scen_23b strong
-    "run_20261027_182638",  # Follow-up scen_23b minimal
-    "run_20261028_033437",  # Batch 2a strong (scen_01 to scen_18 + twins, excl scen_02/16)
-    "run_20261028_080956",  # Batch 3a strong (scen_02b, scen_16b + twins)
-    "run_20261028_081448",  # Batch 3b minimal (9 attacks + 9 twins: 01, 02b, 03, 04, 06b, 09, 10, 11, 16b)
+    "run_20261027_171619",  
+    "run_20261027_174939",  
+    "run_20261027_182504",  
+    "run_20261027_182638",  
+    "run_20261028_033437",  
+    "run_20261028_080956",  
+    "run_20261028_081448",  
 ]
 
 EXCLUDED_RUNS = [

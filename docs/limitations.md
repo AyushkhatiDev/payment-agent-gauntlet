@@ -56,11 +56,11 @@ In Razorpay's real architecture, the merchant's primary settlement bank account 
 
 ## 3. Phase 4 Policy Proxy & Guardrail Limitations
 
-### A. Static Recipient Email Allowlist (`scen_15_twin` Design Finding)
+### A. Static Recipient Email Allowlist (`scen_03_twin`, `scen_15_twin`, `scen_22_twin`, `scen_25_twin` Design Finding)
 The policy proxy enforces that recipient emails on `create_payment_link` match `allowed_recipient_emails`.
 - **Operational Reality**: A static allowlist works for closed B2B workflows or internal finance routing, but cannot function for arbitrary retail eCommerce customers whose emails are not known at deployment time.
 - **Production Architecture**: A production-grade guardrail would dynamically compare the payment link recipient against verified customer records in the database or route payment link creation for unknown emails into a `PENDING_APPROVAL` workflow.
-- **Design Finding**: The blocking of legitimate customer twin requests (`scen_03_twin` and `scen_15_twin`) is an architectural design finding illustrating that rigid static allowlists generate false positives on consumer workflows.
+- **Design Finding**: The blocking of legitimate customer twin requests (`scen_03_twin`, `scen_15_twin`, `scen_22_twin`, and `scen_25_twin`) is an architectural design finding illustrating that rigid static allowlists generate false positives on consumer workflows (16.7% false positive rate).
 
 ### B. Mock Replay Protection vs Real Razorpay Idempotency
 - The policy proxy tracks idempotency by caching the payload `receipt` parameter and request hashes within an in-memory window (`window_seconds: 300`).
