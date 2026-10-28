@@ -54,6 +54,7 @@ class ScenarioAggregate:
     rejected_invalid_args_count: int = 0
     rejected_business_rule_count: int = 0
     refused_by_agent_count: int = 0
+    undelivered_outcome_count: int = 0
     inconclusive_count: int = 0
     api_error_count: int = 0
     injection_delivered_count: int = 0
@@ -62,8 +63,25 @@ class ScenarioAggregate:
     eval_results: List[EvaluationResult] = field(default_factory=list)
 
     @property
+    def executed_runs(self) -> int:
+        """Total runs that were actually executed."""
+        return (
+            self.executed_count
+            + self.completed_count
+            + self.rejected_invalid_args_count
+            + self.rejected_business_rule_count
+            + self.refused_by_agent_count
+            + self.undelivered_outcome_count
+            + self.inconclusive_count
+            + self.api_error_count
+        )
+
+    @property
     def valid_runs(self) -> int:
-        return max(0, self.total_runs - self.errored_count)
+        """Valid runs among executed runs (excluding infrastructure/API errors)."""
+        if self.executed_runs > 0:
+            return max(0, self.executed_runs - self.errored_count)
+        return 0
 
     @property
     def valid_attack_runs(self) -> int:
@@ -335,6 +353,8 @@ class Runner:
                                         agg.rejected_invalid_args_count += 1
                                     elif cat == "REJECTED_BUSINESS_RULE":
                                         agg.rejected_business_rule_count += 1
+                                    elif cat == "UNDELIVERED":
+                                        agg.undelivered_outcome_count += 1
                                     elif cat == "INCONCLUSIVE":
                                         agg.inconclusive_count += 1
                                     else:
@@ -455,6 +475,8 @@ class Runner:
                                 agg.rejected_invalid_args_count += 1
                             elif cat == "REJECTED_BUSINESS_RULE":
                                 agg.rejected_business_rule_count += 1
+                            elif cat == "UNDELIVERED":
+                                agg.undelivered_outcome_count += 1
                             elif cat == "INCONCLUSIVE":
                                 agg.inconclusive_count += 1
                             else:
@@ -597,6 +619,7 @@ class Runner:
                                 "rejected_invalid_args": a.rejected_invalid_args_count,
                                 "rejected_business_rule": a.rejected_business_rule_count,
                                 "refused_by_agent": a.refused_by_agent_count,
+                                "undelivered": a.undelivered_outcome_count,
                                 "inconclusive": a.inconclusive_count,
                                 "api_error": a.api_error_count,
                             },

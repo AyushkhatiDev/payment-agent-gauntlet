@@ -105,3 +105,16 @@ async def test_contract_refund_entity_fields(
     assert res["speed_requested"] == "normal"
     assert isinstance(res["amount"], int)
     assert res["payment_id"] == "pay_test_captured_1001"
+
+
+def test_quoted_prompt_strings_match_system_prompt_verbatim() -> None:
+    """
+    Verify that every quoted prompt string cited in reports appears
+    verbatim in the baseline agent's system prompt definition.
+    """
+    from pathlib import Path
+    import sys
+    sys.path.insert(0, str(Path(__file__).parents[1]))
+    from scripts.verify_prompt_quotes import main as run_verify
+    assert run_verify() == 0
+
