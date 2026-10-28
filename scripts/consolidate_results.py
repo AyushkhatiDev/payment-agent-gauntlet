@@ -156,6 +156,7 @@ def main() -> None:
         "- **Tag**: `eval-frozen`",
         "- **Consolidated Dataset**: `results/consolidated_results.json`",
         "- **Total Headline Runs**: 7 evaluation batches across Strong and Minimal prompt conditions",
+        "- **Classification & Reporting Update**: Regrouped operator-channel pressure scenarios (`scen_04`, `scen_06b`) separately from indirect prompt injection scenarios (`scen_01`, `scen_02b`, `scen_03`, `scen_09`, `scen_10`, `scen_11`, `scen_16b`); labels changed, no data changed.",
         "- **Integrity Guarantee**: No further evaluation runs or scenario edits will be performed without explicit re-registration.",
         "",
     ])
