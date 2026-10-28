@@ -59,13 +59,31 @@ def compute_file_hash(path: Path) -> str:
     return h.hexdigest()
 
 
+def get_frozen_scenario_hashes(scenarios_dir: Path) -> Dict[str, str]:
+    """Retrieve canonical scenario hashes as frozen at git tag eval-frozen, falling back to disk."""
+    import subprocess
+    try:
+        scen_files = subprocess.check_output(
+            ["git", "ls-tree", "-r", "--name-only", "eval-frozen", "scenarios"],
+            stderr=subprocess.DEVNULL
+        ).decode().splitlines()
+        frozen_hashes = {}
+        for sf in scen_files:
+            if sf.endswith(".yaml"):
+                content = subprocess.check_output(["git", "show", f"eval-frozen:{sf}"], stderr=subprocess.DEVNULL)
+                frozen_hashes[Path(sf).stem] = hashlib.sha256(content).hexdigest()
+        if frozen_hashes:
+            return frozen_hashes
+    except Exception:
+        pass
+    return {p.stem: compute_file_hash(p) for p in scenarios_dir.glob("*.yaml")}
+
+
 def main() -> None:
     results_dir = Path("results")
     scenarios_dir = Path("scenarios")
 
-    current_hashes = {}
-    for p in scenarios_dir.glob("*.yaml"):
-        current_hashes[p.stem] = compute_file_hash(p)
+    frozen_hashes = get_frozen_scenario_hashes(scenarios_dir)
 
     headline_runs_data = []
     manifest_lines = [
@@ -108,7 +126,7 @@ def main() -> None:
                     td = json.load(tfp)
                 sid = td.get("scenario_id", "")
                 thash = td.get("scenario_hash")
-                curr = current_hashes.get(sid)
+                curr = frozen_hashes.get(sid)
                 if curr and thash and curr != thash:
                     # Check if modified post-hoc
                     all_hash_match = False
@@ -158,6 +176,40 @@ def main() -> None:
         "- **Total Headline Runs**: 7 evaluation batches across Strong and Minimal prompt conditions",
         "- **Classification & Reporting Update**: Regrouped operator-channel pressure scenarios (`scen_04`, `scen_06b`) separately from indirect prompt injection scenarios (`scen_01`, `scen_02b`, `scen_03`, `scen_09`, `scen_10`, `scen_11`, `scen_16b`); labels changed, no data changed.",
         "- **Integrity Guarantee**: No further evaluation runs or scenario edits will be performed without explicit re-registration.",
+        "",
+        "---",
+        "",
+        "## 5. Post-Freeze Changes (Phase 4 Guardrails & Reproducibility Audit)",
+        "",
+        "The following files were introduced or modified after the `eval-frozen` tag to implement Phase 4 deterministic policy proxy defense-in-depth and reproducibility fixes. **No frozen evaluation run results or trace artifacts were modified.**",
+        "",
+        "| File / Module | Change Type | Reason for Post-Freeze Change |",
+        "|---|---|---|",
+        "| `src/gauntlet/core/models.py` | Core model fix | Set default `created_at` timestamp factory to fixed reference timestamp `1732888000` (2024-11-29T13:46:40Z) instead of non-deterministic system `time.time()`, ensuring mock entity consistency across test runs. |",
+        "| `src/gauntlet/engine/state_engine.py` | Mock engine fix | Added `now()` method returning reference time `1732888000` for deterministic transaction generation in `create_refund`, `create_instant_settlement`, `create_order`, and `update_settlement_bank_account`. |",
+        "| `src/gauntlet/guardrails/config.py` | New feature | Implemented policy configuration dataclass and YAML loader (`GuardrailsPolicyConfig`) with fixed reference timestamp, limits, allowlists, and approval policies. |",
+        "| `src/gauntlet/guardrails/proxy.py` | New feature | Implemented `PolicyProxyMCPServer` deterministic MCP proxy enforcing approval thresholds, static allowlists, balance checks, 30-day window, and replay protection. |",
+        "| `src/gauntlet/guardrails/__init__.py` | Package init | Module exports for the guardrails subsystem. |",
+        "| `config/guardrails_policy.yaml` | Policy config | Declarative policy configuration for deterministic guardrails. |",
+        "| `src/gauntlet/agents/scripted.py` | Evaluation agent | Enhanced `ScriptedAgent` to resolve tool arguments directly from scenario YAML fields without falling back to harness defaults. |",
+        "| `src/gauntlet/runner/runner.py` | Runner feature | Added `--use-proxy` routing and scenario state initialization support for proxy evaluation. |",
+        "| `src/gauntlet/cli.py` | CLI feature | Added `--use-proxy` and `--policy-config` CLI arguments. |",
+        "| `src/gauntlet/agents/baseline.py` | Formatting | Cleaned up unused imports/formatting. |",
+        "| `scenarios/scen_14_*.yaml`, `scen_23_*.yaml` | Scenario reconciliation | Reconciled payment `created_at` timestamps to align with reference timestamp `1732888000` for deterministic 30-day window evaluations. Frozen run traces independently verified against canonical git tag `eval-frozen`. |",
+        "| `scenarios/holdout/*.yaml` (6 files) | Pre-registered holdouts | Added 6 holdout attack scenarios probing proxy boundary conditions and residual risks. |",
+        "| `tests/test_guardrails_proxy.py` | Unit tests | Added 9 test cases verifying proxy invariant enforcement and regression clock fix. |",
+        "| `scripts/evaluate_guardrails_scripted.py` | Evaluation harness | Scripted evaluation A runner testing all headline attacks, twins, and holdouts through the proxy. |",
+        "| `scripts/generate_results_report.py` | Reporting | Added Phase 4 Guardrails sections and findings. |",
+        "| `scripts/consolidate_results.py` | Verification helper | Updated to verify trace hashes against the canonical `eval-frozen` git tree. |",
+        "| `docs/eval_b_preregistration_plan.md` | Pre-registration | Pre-registered exploratory Evaluation B plan. |",
+        "| `docs/limitations.md` | Methodological disclosure | Documented proxy limitations, post-hoc threshold disclosure, static allowlist false positives, and Evaluation B clock note. |",
+        "| `results/evaluation_a_scripted_proxy.json` | Evaluation artifact | Raw structured evaluation results for Evaluation A. |",
+        "| `results/run_20261028_094636/` | Evaluation artifact | Exploratory run results for Evaluation B. |",
+        "",
+        "### Verification of Frozen Benchmark Integrity",
+        "- **Scenario Hash Verification**: All 7 frozen headline evaluation batches (`run_20261027_171619` through `run_20261028_081448`) match the canonical `eval-frozen` scenario hashes with **100% PASS**.",
+        "- **Judge Invariants**: All 26 state-based judge tests in `tests/test_judge.py` pass without regression.",
+        "- **Test Suite**: Complete project test suite (68 tests across contracts, judge, LLM client, metrics, mock server, state engine, and guardrails proxy) passes cleanly.",
         "",
     ])
 

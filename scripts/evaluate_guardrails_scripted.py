@@ -10,6 +10,7 @@ Evaluates:
 
 import asyncio
 import json
+import re
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 import yaml
@@ -114,34 +115,51 @@ async def run_scripted_legitimate_action_through_proxy(
             op = req.operation
             args: Dict[str, Any] = {}
             if op == "create_refund":
+                pid = req.payment_id or (scenario.seed_state.get("payments", [{}])[0].get("id"))
+                amt = req.amount
+                if amt is None and scenario.seed_state.get("payments"):
+                    for p in scenario.seed_state["payments"]:
+                        if p.get("id") == pid:
+                            amt = p.get("amount")
+                            break
                 args = {
-                    "payment_id": req.payment_id or (scenario.seed_state.get("payments", [{}])[0].get("id")),
-                    "amount": req.amount or 10000,
+                    "payment_id": pid,
+                    "amount": amt if amt is not None else 10000,
                 }
             elif op == "create_instant_settlement":
-                args = {"amount": req.amount or 50000}
+                amt = req.amount
+                if amt is None and scenario.seed_state.get("payments"):
+                    amt = scenario.seed_state["payments"][0].get("amount")
+                args = {"amount": amt if amt is not None else 50000}
             elif op == "create_payment_link":
-                # Look up customer email from seed state or task
-                email = "verified_buyer@enterprise.in"
-                if "vip_buyer@example.com" in scenario.operator_task:
-                    email = "vip_buyer@example.com"
-                elif scenario.id == "scen_15_twin_authorized_payment_link":
-                    orders = scenario.seed_state.get("orders", [])
-                    if orders and "verified_customer_email" in orders[0].get("notes", {}):
-                        email = orders[0]["notes"]["verified_customer_email"]
-                    else:
-                        email = "sarah.jenkins@acme-corp.com"
-                elif "sarah.jenkins@acme-corp.com" in scenario.operator_task:
-                    email = "sarah.jenkins@acme-corp.com"
+                # Look up customer email from scenario YAML fields (req, seed_state, or operator_task)
+                email = None
+                if req.recipient_email:
+                    email = req.recipient_email
+                elif scenario.seed_state.get("orders") and scenario.seed_state["orders"][0].get("notes", {}).get("verified_customer_email"):
+                    email = scenario.seed_state["orders"][0]["notes"]["verified_customer_email"]
+                elif scenario.seed_state.get("payments") and scenario.seed_state["payments"][0].get("email"):
+                    email = scenario.seed_state["payments"][0]["email"]
+                else:
+                    m = re.findall(r'[\w\.-]+@[\w\.-]+', scenario.operator_task)
+                    if m:
+                        email = m[0].rstrip(".")
+                
+                amt = req.amount
+                if amt is None and scenario.seed_state.get("payments"):
+                    amt = scenario.seed_state["payments"][0].get("amount")
+                if amt is None and scenario.seed_state.get("orders"):
+                    amt = scenario.seed_state["orders"][0].get("amount")
+
                 args = {
-                    "amount": req.amount or 50000,
+                    "amount": amt if amt is not None else 50000,
                     "currency": "INR",
                     "description": "Authorized payment link",
-                    "customer_email": email,
+                    "customer_email": email or "verified_buyer@enterprise.in",
                 }
             elif op == "update_settlement_bank_account":
                 args = {
-                    "account_number": req.account_number or "910099887766",
+                    "account_number": req.account_number or (scenario.seed_state.get("bank_account", {}).get("account_number") if scenario.seed_state else None) or "910099887766",
                     "ifsc": "HDFC0001234",
                     "beneficiary_name": "Merchant Direct",
                 }
@@ -327,7 +345,8 @@ async def main() -> None:
     print(f"\n**Legitimate Operations Summary (N={len(real_legit)})**:")
     print(f"- **Immediate Execution (ALLOWED)**: {allow_legit} / {len(real_legit)} ({allow_legit/len(real_legit)*100:.1f}%)")
     print(f"- **Operational Friction (PENDING_APPROVAL)**: {frict_legit} / {len(real_legit)} (**{friction_pct:.1f}%**) — *at the chosen thresholds, roughly half of legitimate actions require supervisor manual approval.*")
-    print(f"- **False Positives (BLOCKED)**: {fp_legit} / {len(real_legit)} (**{fp_pct:.1f}%**) — *scen_03_twin and scen_15_twin blocked by static email allowlist.*\n")
+    blocked_legit_ids = [r["id"] for r in real_legit if r["outcome"] == "BLOCKED"]
+    print(f"- **False Positives (BLOCKED)**: {fp_legit} / {len(real_legit)} (**{fp_pct:.1f}%**) — *{', '.join(blocked_legit_ids)} blocked by static email allowlist.*\n")
 
     print("### 4. Synthetic-Tool Legitimate Actions (Separate Evaluation, N=3)")
     print("| Scenario ID | Title | Proxy Outcome | Operational Impact | Reason |")
