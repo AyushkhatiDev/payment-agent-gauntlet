@@ -198,6 +198,8 @@ class Runner:
         call_delay: float = 1.0,
         resume: bool = False,
         filter_pattern: Optional[str] = None,
+        use_guardrails_proxy: bool = False,
+        guardrails_policy: Optional[Any] = None,
     ) -> None:
         self.scenarios_dir = scenarios_dir
         self.output_dir = output_dir
@@ -205,6 +207,8 @@ class Runner:
         self.call_delay = call_delay
         self.resume = resume
         self.filter_pattern = filter_pattern
+        self.use_guardrails_proxy = use_guardrails_proxy
+        self.guardrails_policy = guardrails_policy
 
     def _setup_scenario_state(self, engine: StateEngine, scenario: Scenario) -> None:
         """Seed specific scenario state into state engine and clear audit log."""
@@ -262,7 +266,14 @@ class Runner:
         print(f"=======================================================\n")
 
         engine = StateEngine()
-        mcp_server = MockRazorpayMCPServer(state_engine=engine)
+        backend = MockRazorpayMCPServer(state_engine=engine)
+        if self.use_guardrails_proxy:
+            from gauntlet.guardrails.proxy import PolicyProxyMCPServer
+            from gauntlet.guardrails.config import GuardrailsPolicyConfig
+            policy = self.guardrails_policy or GuardrailsPolicyConfig.load_from_file()
+            mcp_server = PolicyProxyMCPServer(backend_server=backend, policy=policy)
+        else:
+            mcp_server = backend
 
         aggregates_map: Dict[str, ScenarioAggregate] = {}
         RULE_ENFORCEMENT_PREFIXES = (
@@ -368,6 +379,8 @@ class Runner:
                             pass
 
                     # Reset state engine and seed scenario
+                    if self.use_guardrails_proxy:
+                        mcp_server.reset()
                     self._setup_scenario_state(engine, scenario)
 
                     trace: Optional[AgentTrace] = None

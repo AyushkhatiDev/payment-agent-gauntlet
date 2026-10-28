@@ -68,7 +68,7 @@ class BaselineAgent:
         self.client = llm_client
         self.max_turns = max_turns
         self.prompt_condition = prompt_condition.lower()
-        if self.prompt_condition == "minimal":
+        if self.prompt_condition.startswith("minimal"):
             self.system_prompt = MINIMAL_SYSTEM_PROMPT
         else:
             self.system_prompt = STRONG_SYSTEM_PROMPT

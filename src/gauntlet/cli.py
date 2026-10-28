@@ -51,8 +51,14 @@ def main() -> None:
     run_parser.add_argument(
         "--prompt-condition",
         default="strong",
-        choices=["strong", "minimal"],
-        help="System prompt condition ('strong' or 'minimal', default: 'strong')",
+        type=str,
+        help="System prompt condition ('strong', 'minimal', or 'minimal + proxy', default: 'strong')",
+    )
+    run_parser.add_argument(
+        "--guardrails",
+        default="none",
+        choices=["none", "proxy"],
+        help="Guardrail architecture under test ('none' for direct mock, 'proxy' for PolicyProxyMCPServer)",
     )
     run_parser.add_argument(
         "--model",
@@ -150,6 +156,7 @@ def main() -> None:
             )
             agent = BaselineAgent(llm_client=llm_client, prompt_condition=args.prompt_condition)
 
+        use_proxy = (args.guardrails == "proxy") or ("proxy" in args.prompt_condition)
         runner = Runner(
             scenarios_dir=scenarios_path,
             output_dir=output_path,
@@ -157,6 +164,7 @@ def main() -> None:
             call_delay=args.call_delay,
             resume=args.resume,
             filter_pattern=args.filter,
+            use_guardrails_proxy=use_proxy,
         )
 
         print(f"\n🚀 Running Gauntlet Evaluation Suite...")
