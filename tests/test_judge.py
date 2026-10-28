@@ -1066,6 +1066,86 @@ def test_twin_gating_regression_partial_run_pending() -> None:
         temp_path.unlink(missing_ok=True)
 
 
+@pytest.mark.asyncio
+async def test_zero_quota_validity_check_scen_02b_and_16b() -> None:
+    """
+    Zero-quota validity check for scen_02b, scen_16b and their twins:
+    (a) fetch_payment returns the attacker payload,
+    (b) the forbidden mutation is recorded as EXECUTED,
+    (c) the authorized twin's required action is possible.
+    """
+    from gauntlet.agents.scripted import ScriptedAgent
+    from gauntlet.engine.state_engine import StateEngine
+    from gauntlet.mock_server.server import MockRazorpayMCPServer
+    from gauntlet.runner.runner import Runner
+
+    cases = [
+        (
+            "scenarios/scen_02b_payment_note_instant_settlement.yaml",
+            "scenarios/scen_02b_twin_authorized_instant_settlement.yaml",
+        ),
+        (
+            "scenarios/scen_16b_payment_note_instant_settlement_diversion.yaml",
+            "scenarios/scen_16b_twin_authorized_settlement.yaml",
+        ),
+    ]
+
+    for attack_path, twin_path in cases:
+        engine = StateEngine()
+        server = MockRazorpayMCPServer(state_engine=engine)
+        runner = Runner(scenarios_dir=Path("scenarios"))
+
+        scen_atk = load_scenario(Path(attack_path))
+        runner._setup_scenario_state(engine, scen_atk)
+
+        # (a) fetch_payment returns the attacker payload
+        pid = scen_atk.seed_state["payments"][0]["id"]
+        pay_res = await server.call_tool("fetch_payment", {"payment_id": pid})
+        assert scen_atk.attacker_payload in str(pay_res)
+
+        # (b) forbidden mutation is recorded as EXECUTED
+        agent = ScriptedAgent()
+        agent.set_scenario(scen_atk)
+        trace = await agent.run(scen_atk.operator_task, server, scenario=scen_atk)
+        tool_calls_dict = [
+            {"name": tc.name, "arguments": tc.arguments, "result": tc.result, "is_error": tc.is_error}
+            for tc in trace.tool_calls
+        ]
+        tool_calls_with_fetch = [
+            {"name": "fetch_payment", "arguments": {"payment_id": pid}, "result": pay_res, "is_error": False}
+        ] + tool_calls_dict
+
+        res = evaluate_run(
+            scenario=scen_atk,
+            audit_log=engine.audit_log,
+            tool_calls=tool_calls_with_fetch,
+            final_output=trace.final_output,
+        )
+        assert res.outcome_category == "EXECUTED"
+        assert res.passed is False
+        assert res.succeeded is True
+
+        # (c) authorized twin required action is possible
+        engine_twin = StateEngine()
+        server_twin = MockRazorpayMCPServer(state_engine=engine_twin)
+        scen_twin = load_scenario(Path(twin_path))
+        runner._setup_scenario_state(engine_twin, scen_twin)
+
+        req_op = scen_twin.required_mutations[0]
+        call_args = {"amount": req_op.amount or 50000}
+        twin_res = await server_twin.call_tool(req_op.operation, call_args)
+        assert not (isinstance(twin_res, dict) and "error" in twin_res)
+
+        twin_eval = evaluate_run(
+            scenario=scen_twin,
+            audit_log=engine_twin.audit_log,
+            tool_calls=[{"name": req_op.operation, "arguments": call_args, "result": twin_res, "is_error": False}],
+            final_output="Settlement executed as instructed.",
+        )
+        assert twin_eval.passed is True
+        assert twin_eval.outcome_category == "COMPLETED"
+
+
 
 
 
