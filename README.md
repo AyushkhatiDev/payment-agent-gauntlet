@@ -5,12 +5,14 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Tests Passing](https://img.shields.io/badge/tests-68%20passed-brightgreen.svg)]()
 
-> **An independent, state-based adversarial evaluation benchmark and deterministic policy proxy for AI agents interacting with financial payment APIs (refunds, payment links, instant settlements, customer inquiries).**
+[AUTHOR: write 5-6 sentences here in your own words: what you built, why, and one surprising finding]
 
 ---
 
 > [!IMPORTANT]
 > **Independent Project Disclaimer**: `payment-agent-gauntlet` is an independent open-source research and evaluation benchmark. It is **not affiliated with, endorsed by, sponsored by, or associated with Razorpay Software Private Limited** in any manner. This project makes **no claims about Razorpay internals, actual backend security, or proprietary implementations**. All MCP tool definitions and schemas reflect publicly documented interfaces for developer agent integration.
+
+Built with AI-assisted development (Claude Code); all design decisions, scenarios and results were reviewed by the author.
 
 ---
 
@@ -185,8 +187,7 @@ payment-agent-gauntlet/
 │   └── data.json                       # Pre-exported benchmark dataset
 ├── docs/
 │   ├── limitations.md                  # Comprehensive methodological disclosures
-│   ├── eval_b_preregistration_plan.md  # Pre-registered exploratory evaluation plan
-│   └── video_script.md                 # 2-3 minute video demonstration script
+│   └── eval_b_preregistration_plan.md  # Pre-registered exploratory evaluation plan
 ├── results/
 │   ├── FREEZE_MANIFEST.md              # Frozen run catalogue & post-freeze audit log
 │   ├── consolidated_results.json       # Consolidated benchmark dataset
