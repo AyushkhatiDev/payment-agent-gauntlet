@@ -50,13 +50,56 @@
     const sm = appData.summary_metrics;
     if (!sm) return;
 
-    document.getElementById("stat-scenarios").innerText = sm.total_scenarios;
-    document.getElementById("stat-headline-attacks").innerText = sm.headline_attacks;
-    document.getElementById("stat-minimal-asr").innerText = sm.prompt_comparison.minimal_asr;
-    document.getElementById("stat-strong-asr").innerText = sm.prompt_comparison.strong_asr;
-    document.getElementById("stat-proxy-mitigation").innerText = sm.proxy_guardrails.headline_attacks_mitigated;
-    document.getElementById("stat-friction").innerText = sm.proxy_guardrails.legitimate_friction_pending;
-    document.getElementById("stat-false-positives").innerText = sm.proxy_guardrails.legitimate_false_positives_blocked;
+    const elScen = document.getElementById("stat-scenarios");
+    if (elScen) elScen.textContent = sm.total_scenarios;
+
+    const elAtk = document.getElementById("stat-headline-attacks");
+    if (elAtk) elAtk.textContent = sm.headline_attacks;
+
+    const elMin = document.getElementById("stat-minimal-asr");
+    if (elMin) elMin.textContent = sm.prompt_comparison.minimal_forbidden_actions || sm.prompt_comparison.minimal_asr;
+
+    const elStr = document.getElementById("stat-strong-asr");
+    if (elStr) elStr.textContent = sm.prompt_comparison.strong_forbidden_actions || sm.prompt_comparison.strong_asr;
+
+    const elProxy = document.getElementById("stat-proxy-mitigation");
+    if (elProxy) elProxy.textContent = sm.proxy_guardrails.headline_attacks_mitigated;
+
+    const elFric = document.getElementById("stat-friction");
+    if (elFric) elFric.textContent = sm.proxy_guardrails.legitimate_friction_pending;
+
+    const elFp = document.getElementById("stat-false-positives");
+    if (elFp) elFp.textContent = sm.proxy_guardrails.legitimate_false_positives_blocked;
+
+    // Render Attack Mitigation dynamic table
+    const tableBody = document.getElementById("attack-mitigation-table-body");
+    if (tableBody && appData.attack_mitigation_table) {
+      tableBody.innerHTML = appData.attack_mitigation_table
+        .map((row) => {
+          return `
+          <tr>
+            <td>
+              <strong>${escapeHtml(row.family)}</strong><br/>
+              <span style="font-size:11px; color:var(--text-muted);">${escapeHtml(row.description)}</span>
+            </td>
+            <td><code>${row.scenario_count}</code></td>
+            <td style="color:var(--status-allowed); font-size:12px;">
+              <strong>${escapeHtml(row.strong_cell)}</strong>
+            </td>
+            <td style="color:${row.minimal_executed_k > 0 ? 'var(--status-executed)' : 'var(--text-secondary)'}; font-size:12px;">
+              <strong>${escapeHtml(row.minimal_cell)}</strong>
+            </td>
+            <td style="font-size:12px; color:var(--text-secondary);">
+              ${escapeHtml(row.difference_cell)}
+            </td>
+            <td>
+              <span class="badge ${escapeHtml(row.proxy_badge)}">${escapeHtml(row.proxy_desc)}</span>
+            </td>
+          </tr>
+        `;
+        })
+        .join("");
+    }
   }
 
   // 2. Interactive Comparator
@@ -70,7 +113,7 @@
     comparisons.forEach((item, idx) => {
       const btn = document.createElement("button");
       btn.className = `scenario-pill ${idx === 0 ? "active" : ""}`;
-      btn.innerText = `${item.scenario_id.split("_")[1]} - ${item.title.split(" ")[0]}...`;
+      btn.textContent = `${item.scenario_id.split("_")[1]} - ${item.title.split(" ")[0]}...`;
       btn.title = item.title;
       btn.addEventListener("click", () => {
         document.querySelectorAll(".scenario-pill").forEach((p) => p.classList.remove("active"));
@@ -256,15 +299,22 @@
     const policy = appData.eval_a_results?.policy;
     if (!policy) return;
 
-    document.getElementById("policy-threshold").innerText = `${policy.approval_threshold_paise} paise (₹${(policy.approval_threshold_paise / 100).toFixed(2)})`;
-    document.getElementById("policy-daily-cap").innerText = `${policy.max_cumulative_daily_refund_paise} paise (₹${(policy.max_cumulative_daily_refund_paise / 100).toFixed(2)})`;
-    document.getElementById("policy-window").innerText = `${policy.max_refund_window_days} days`;
+    const elThresh = document.getElementById("policy-threshold");
+    if (elThresh) elThresh.textContent = `${policy.approval_threshold_paise} paise (₹${(policy.approval_threshold_paise / 100).toFixed(2)})`;
+
+    const elCap = document.getElementById("policy-daily-cap");
+    if (elCap) elCap.textContent = `${policy.max_cumulative_daily_refund_paise} paise (₹${(policy.max_cumulative_daily_refund_paise / 100).toFixed(2)})`;
+
+    const elWin = document.getElementById("policy-window");
+    if (elWin) elWin.textContent = `${policy.max_refund_window_days} days`;
 
     const emailList = (policy.allowed_recipient_emails || []).map((e) => `<li><code>${escapeHtml(e)}</code></li>`).join("");
-    document.getElementById("policy-emails").innerHTML = emailList || "None configured";
+    const elEmails = document.getElementById("policy-emails");
+    if (elEmails) elEmails.innerHTML = emailList || "None configured";
 
     const domainList = (policy.allowed_callback_domains || []).map((d) => `<li><code>${escapeHtml(d)}</code></li>`).join("");
-    document.getElementById("policy-domains").innerHTML = domainList || "None configured";
+    const elDomains = document.getElementById("policy-domains");
+    if (elDomains) elDomains.innerHTML = domainList || "None configured";
   }
 
   function escapeHtml(val) {

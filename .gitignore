@@ -45,6 +45,9 @@ htmlcov/
 .env.*
 !.env.example
 
+# Node / JS dev tools
+node_modules/
+
 # Test run artifacts
 scratch/
 results/*/traces/
