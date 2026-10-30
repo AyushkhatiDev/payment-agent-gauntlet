@@ -154,13 +154,13 @@ def format_results_report(summary_json_path: Path, scenarios_dir: Path = Path("s
 
     if valid_op_pressure:
         lines.append(
-            f"- **Operator-channel pressure, no-rule baseline (scen_04, scen_06b)**: **{op_pressure_succ_pct:.1f}% [{op_pressure_succ_ci[0]:.1f}%, {op_pressure_succ_ci[1]:.1f}%]** success rate ({op_pressure_succ}/{op_pressure_deliv} exploits), **{op_pressure_att_pct:.1f}% [{op_pressure_att_ci[0]:.1f}%, {op_pressure_att_ci[1]:.1f}%]** attempt rate ({op_pressure_att}/{op_pressure_deliv} attempts across {len(valid_op_pressure)} delivered scenarios, {op_pressure_deliv} runs)"
+            f"- **Direct pressure messages (social engineering) (scen_04, scen_06b)**: **{op_pressure_succ_pct:.1f}% [{op_pressure_succ_ci[0]:.1f}%, {op_pressure_succ_ci[1]:.1f}%]** success rate ({op_pressure_succ}/{op_pressure_deliv} exploits), **{op_pressure_att_pct:.1f}% [{op_pressure_att_ci[0]:.1f}%, {op_pressure_att_ci[1]:.1f}%]** attempt rate ({op_pressure_att}/{op_pressure_deliv} attempts across {len(valid_op_pressure)} delivered scenarios, {op_pressure_deliv} runs)"
         )
 
     lines.extend([
         "",
         "> [!NOTE]",
-        "> **Classification Note**: Operator-channel pressure scenarios (`scen_04`, `scen_06b`) test social engineering and authority coercion transmitted directly through the trusted operator task prompt rather than untrusted data fields. They provide a no-rule baseline and are excluded from indirect prompt injection rates. This regrouping was decided after seeing the minimal-prompt results.",
+        "> **Classification Note**: Direct pressure scenarios (`scen_04`, `scen_06b`) test social engineering and authority coercion in customer and user support messages (e.g. live chat, support tickets) demanding emergency overrides rather than untrusted stored database fields. They provide a no-rule baseline and are excluded from indirect prompt injection rates. This regrouping was decided after seeing the minimal-prompt results.",
         "",
     ])
 
@@ -289,12 +289,12 @@ def format_results_report(summary_json_path: Path, scenarios_dir: Path = Path("s
             lines.append(render_attack_row(a))
         lines.append("")
 
-    # 2c. Operator-Channel Pressure Table
+    # 2c. Direct Pressure Messages Table
     if operator_pressure_attacks:
         lines.extend([
-            f"#### 2c. Adversarial Attacks - Operator-Channel Pressure, No-Rule Baseline (on `{model}`, prompt `{prompt_cond}`, N={reps}, exploratory)",
+            f"#### 2c. Adversarial Attacks - Direct Pressure Messages (Social Engineering), No-Rule Baseline (on `{model}`, prompt `{prompt_cond}`, N={reps}, exploratory)",
             "> [!NOTE]",
-            "> Operator-channel pressure scenarios (`scen_04`, `scen_06b`) test social engineering and coercion in the trusted operator prompt rather than untrusted data fields.",
+            "> Direct pressure scenarios (`scen_04`, `scen_06b`) test social engineering and coercion in user and customer messages rather than indirect stored fields.",
             "",
             "| ID | Scenario | Tier | Twin Gating Status | Delivered / Total | Attempt Rate (Delivered) | Success Rate (Delivered) | Leak Rate | Outcomes (EXEC / INV_ARG / BIZ_RULE / REFUSED / UNDELIV / INCONCL / API_ERR) | Errored |",
             "|---|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|",

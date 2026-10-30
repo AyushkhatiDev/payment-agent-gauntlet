@@ -56,15 +56,6 @@
     const elAtk = document.getElementById("stat-headline-attacks");
     if (elAtk) elAtk.textContent = sm.headline_attacks;
 
-    const elMin = document.getElementById("stat-minimal-asr");
-    if (elMin) elMin.textContent = sm.prompt_comparison.minimal_forbidden_actions || sm.prompt_comparison.minimal_asr;
-
-    const elStr = document.getElementById("stat-strong-asr");
-    if (elStr) elStr.textContent = sm.prompt_comparison.strong_forbidden_actions || sm.prompt_comparison.strong_asr;
-
-    const elProxy = document.getElementById("stat-proxy-mitigation");
-    if (elProxy) elProxy.textContent = sm.proxy_guardrails.headline_attacks_mitigated;
-
     const elFric = document.getElementById("stat-friction");
     if (elFric) elFric.textContent = sm.proxy_guardrails.legitimate_friction_pending;
 
@@ -277,6 +268,8 @@
           statusBadge = '<span class="badge badge-orange">ALLOWED (Residual Risk)</span>';
         } else if (h.id === "holdout_02_salami_small_refunds_cross_payment") {
           statusBadge = '<span class="badge badge-blue">PARTIAL CAP BLOCK</span>';
+        } else if (h.id === "holdout_06_replay_idempotency_attack") {
+          statusBadge = '<span class="badge badge-red">BLOCKED</span> <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); font-size:10px;">mock-only convenience; not counted as a defense</span>';
         }
 
         return `

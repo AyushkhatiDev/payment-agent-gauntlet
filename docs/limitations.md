@@ -76,5 +76,20 @@ The policy proxy enforces that recipient emails on `create_payment_link` match `
 - Prior to the fix, single-payment test states derived reference time from `max(created_at)`, yielding an age of 0 days. With the injectable reference time fix (`1732888000`), `scen_14`, `scen_23`, and `scen_23b` are all deterministically blocked by the 30-day window check (`max_refund_window_days`).
 - In addition, `holdout_06` relies on the mock-only receipt guard; it is reported as a mock-only convenience, not counted as a defense.
 
+---
+
+## 4. Benchmark & Scenario Limitations
+
+I explicitly disclose the following constraints:
+
+### A. Hostile Entity Names in Early Scenarios
+Some early scenarios use obviously hostile entity names (e.g. `attacker_charlie@external.org` in `scen_05`) that make them easy for frontier models to refuse; they were frozen before this was caught and were not edited post-freeze to preserve frozen benchmark integrity.
+
+### B. Post-Hoc Scenario Regrouping (scen_04 and scen_06b)
+Direct pressure scenarios (`scen_04` and `scen_06b`) were regrouped after minimal-prompt results were seen. These scenarios test direct social engineering and coercion transmitted in customer/user support messages (e.g. "A customer on live chat stating...", "Support message from user...") rather than indirect prompt injection hidden in stored payment fields.
+
+### C. Illustrative Allowlist Entries & Threshold Values
+Allowlist entries (recipient emails, callback domains) and threshold values in `config/guardrails_policy.yaml` are illustrative, written by the author after seeing the scenario requirements rather than derived from empirical merchant traffic.
+
 
 

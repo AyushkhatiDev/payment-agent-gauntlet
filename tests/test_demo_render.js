@@ -41,8 +41,16 @@ function runSmokeTest() {
   // 1. Assert Overview Elements
   const statScenarios = window.document.getElementById("stat-scenarios");
   if (statScenarios) assert.strictEqual(statScenarios.textContent, "52");
+
+  const statStrong = window.document.getElementById("stat-strong-asr");
+  assert(statStrong.textContent.includes("0 of 110 runs"));
+
+  const statMinimal = window.document.getElementById("stat-minimal-asr");
+  assert(statMinimal.textContent.includes("15 of 75 runs"));
+  assert(statMinimal.textContent.includes("scen_04, scen_06b, scen_23"));
+
   const statProxy = window.document.getElementById("stat-proxy-mitigation");
-  assert.strictEqual(statProxy.textContent, "21 / 22 (95.5%)");
+  assert(statProxy.textContent.includes("8 blocked, 11 held for approval"));
 
   const statFriction = window.document.getElementById("stat-friction");
   assert.strictEqual(statFriction.textContent, "12 / 24 (50.0%)");
