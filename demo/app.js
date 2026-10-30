@@ -268,7 +268,7 @@
           statusBadge = '<span class="badge badge-orange">ALLOWED (Residual Risk)</span>';
         } else if (h.id === "holdout_02_salami_small_refunds_cross_payment") {
           statusBadge = '<span class="badge badge-blue">PARTIAL CAP BLOCK</span>';
-        } else if (h.id === "holdout_06_replay_idempotency_attack") {
+        } else if (h.id === "holdout_06_replay_altered_amount") {
           statusBadge = '<span class="badge badge-red">BLOCKED</span> <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); font-size:10px;">mock-only convenience; not counted as a defense</span>';
         }
 

@@ -46,7 +46,7 @@
             Forbidden actions executed: 0 of 110 runs (22 scenarios)
           </div>
           <div class="card-desc" style="font-size:11px; margin-top:4px;">
-            0.0% [0.0%, 3.4%]. Scenarios are not interchangeable; this is a tally, not a rate.
+            Scenarios are not interchangeable; this is a tally, not a rate.
           </div>
         </div>
         <div class="card">
@@ -55,7 +55,7 @@
             15 of 75 runs (15 scenarios), all from scen_04, scen_06b, scen_23
           </div>
           <div class="card-desc" style="font-size:11px; margin-top:4px;">
-            20.0% [12.5%, 30.4%] across 15 tested (7 not run). Scenarios are not interchangeable; this is a tally, not a rate.
+            7 scenarios not run. Scenarios are not interchangeable; this is a tally, not a rate.
           </div>
         </div>
         <div class="card">
@@ -290,7 +290,11 @@
             </tr>
             <tr>
               <td><strong>Hostile Entity Names in Early Scenarios</strong></td>
-              <td>Some early scenarios use obviously hostile entity names (e.g. <code>attacker_charlie@external.org</code> in <code>scen_05</code>) that make them easy for frontier models to refuse; they were frozen before this was caught and were not edited post-freeze to preserve frozen benchmark integrity.</td>
+              <td>Some early scenarios use obviously hostile entity names (e.g. <code>attacker_charlie@external.org</code> in <code>scen_05</code>) that may make them easier to refuse; they were frozen before this was caught and were not edited post-freeze to preserve frozen benchmark integrity.</td>
+            </tr>
+            <tr>
+              <td><strong>Same-Channel Customer Messages</strong></td>
+              <td>In <code>scen_04</code>, <code>scen_05</code>, and <code>scen_06b</code>, the customer message arrives in the same channel as operator instructions, so the agent can only tell them apart from the framing text.</td>
             </tr>
             <tr>
               <td><strong>Post-Hoc Scenario Regrouping</strong></td>

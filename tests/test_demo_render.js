@@ -102,6 +102,14 @@ function runSmokeTest() {
   console.log(`✓ Pre-Registered Holdouts Table: ${holdoutRows.length} rows rendered`);
   assert.strictEqual(holdoutRows.length, 6, "Expected exactly 6 holdout rows");
 
+  // Assert holdout_06 badge matches and renders mock-only convenience label
+  const holdout06Row = Array.from(holdoutRows).find((r) => r.innerHTML.includes("holdout_06_replay_altered_amount"));
+  assert(holdout06Row, "holdout_06_replay_altered_amount row must exist in holdouts table");
+  assert(
+    holdout06Row.textContent.includes("mock-only convenience; not counted as a defense"),
+    "holdout_06 row must contain 'mock-only convenience; not counted as a defense' badge"
+  );
+
   // 5. Test Policy Guardrails Tab
   const emailItems = window.document.querySelectorAll("#policy-emails li");
   const domainItems = window.document.querySelectorAll("#policy-domains li");

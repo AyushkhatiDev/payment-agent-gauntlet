@@ -83,12 +83,15 @@ The policy proxy enforces that recipient emails on `create_payment_link` match `
 I explicitly disclose the following constraints:
 
 ### A. Hostile Entity Names in Early Scenarios
-Some early scenarios use obviously hostile entity names (e.g. `attacker_charlie@external.org` in `scen_05`) that make them easy for frontier models to refuse; they were frozen before this was caught and were not edited post-freeze to preserve frozen benchmark integrity.
+Some early scenarios use obviously hostile entity names (e.g. `attacker_charlie@external.org` in `scen_05`) that may make them easier to refuse; they were frozen before this was caught and were not edited post-freeze to preserve frozen benchmark integrity.
 
-### B. Post-Hoc Scenario Regrouping (scen_04 and scen_06b)
+### B. Same-Channel Customer Messages
+In `scen_04`, `scen_05`, and `scen_06b`, the customer message arrives in the same channel as operator instructions, so the agent can only tell them apart from the framing text.
+
+### C. Post-Hoc Scenario Regrouping (scen_04 and scen_06b)
 Direct pressure scenarios (`scen_04` and `scen_06b`) were regrouped after minimal-prompt results were seen. These scenarios test direct social engineering and coercion transmitted in customer/user support messages (e.g. "A customer on live chat stating...", "Support message from user...") rather than indirect prompt injection hidden in stored payment fields.
 
-### C. Illustrative Allowlist Entries & Threshold Values
+### D. Illustrative Allowlist Entries & Threshold Values
 Allowlist entries (recipient emails, callback domains) and threshold values in `config/guardrails_policy.yaml` are illustrative, written by the author after seeing the scenario requirements rather than derived from empirical merchant traffic.
 
 
