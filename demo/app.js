@@ -91,7 +91,7 @@
       .map(
         (t) => `
         <div class="trace-item">
-          <span class="tool-call">${t.tool}(${JSON.stringify(t.args)})</span>
+          <span class="tool-call">${escapeHtml(t.tool)}(${escapeHtml(JSON.stringify(t.args))})</span>
           <span class="tool-status" style="color:var(--status-executed)">EXECUTED</span>
         </div>`
       )
@@ -105,21 +105,21 @@
         const color = isBlock ? "var(--status-blocked)" : isPending ? "var(--status-pending)" : isExec ? "var(--status-executed)" : "var(--status-allowed)";
         return `
         <div class="trace-item">
-          <span class="tool-call">${t.tool}(${JSON.stringify(t.args)})</span>
-          <span class="tool-status" style="color:${color}">${t.status}</span>
+          <span class="tool-call">${escapeHtml(t.tool)}(${escapeHtml(JSON.stringify(t.args))})</span>
+          <span class="tool-status" style="color:${color}">${escapeHtml(t.status)}</span>
         </div>`;
       })
       .join("");
 
     viewer.innerHTML = `
       <div style="margin-bottom:14px;">
-        <h3 style="font-size:18px; margin-bottom:4px;">${item.title}</h3>
-        <p style="font-size:13px; color:var(--text-secondary);">Scenario: <code>${item.scenario_id}</code> | Category: <code>${item.category}</code></p>
+        <h3 style="font-size:18px; margin-bottom:4px;">${escapeHtml(item.title)}</h3>
+        <p style="font-size:13px; color:var(--text-secondary);">Scenario: <code>${escapeHtml(item.scenario_id)}</code> | Category: <code>${escapeHtml(item.category)}</code></p>
       </div>
 
       <div class="callout-box" style="margin-bottom:16px;">
-        <strong>Operator Task:</strong> "${item.task}"<br/>
-        <strong style="color:#e3b341;">Untrusted Injected Vector:</strong> ${item.injected_payload}
+        <strong>Operator Task:</strong> "${escapeHtml(item.task)}"<br/>
+        <strong style="color:#e3b341;">Untrusted Injected Vector:</strong> ${escapeHtml(item.injected_payload)}
       </div>
 
       <div class="split-view">
@@ -127,9 +127,12 @@
         <div class="panel-agent compromised">
           <div class="panel-header">
             <span class="panel-title">1. Baseline Agent (No Proxy)</span>
-            <span class="badge badge-red">${item.unconstrained_outcome}</span>
+            <div>
+              <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">recorded run</span>
+              <span class="badge badge-red">${escapeHtml(item.unconstrained_outcome)}</span>
+            </div>
           </div>
-          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${item.unconstrained_analysis}</p>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${escapeHtml(item.unconstrained_analysis)}</p>
           <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">TOOL CALL AUDIT TRACE:</div>
           ${unconstrainedTracesHtml}
           <div style="font-size:12px; margin-top:12px; color:var(--status-executed);">
@@ -141,10 +144,13 @@
         <div class="panel-agent guarded">
           <div class="panel-header">
             <span class="panel-title">2. Guarded Agent (Policy Proxy Interception)</span>
-            <span class="badge badge-blue">${item.proxy_outcome}</span>
+            <div>
+              <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">deterministic simulation, no LLM</span>
+              <span class="badge badge-blue">${escapeHtml(item.proxy_outcome)}</span>
+            </div>
           </div>
           <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
-            <strong>Deterministic Proxy Decision:</strong> ${item.proxy_reason}
+            <strong>Deterministic Proxy Decision:</strong> ${escapeHtml(item.proxy_reason)}
           </p>
           <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">PROXY INTERCEPT TRACE:</div>
           ${proxyTracesHtml}
@@ -197,11 +203,11 @@
           return `
           <tr>
             <td>
-              <code>${s.id}</code><br/>
-              <strong>${s.title}</strong> ${synthBadge}
+              <code>${escapeHtml(s.id)}</code><br/>
+              <strong>${escapeHtml(s.title)}</strong> ${synthBadge}
             </td>
             <td>${kindBadge}</td>
-            <td><code>${s.category}</code></td>
+            <td><code>${escapeHtml(s.category)}</code></td>
             <td style="font-size:12px; color:var(--text-secondary); max-width:400px;">
               ${escapeHtml(s.operator_task)}
             </td>
@@ -233,8 +239,8 @@
         return `
         <tr>
           <td>
-            <code>${h.id}</code><br/>
-            <strong>${h.title}</strong>
+            <code>${escapeHtml(h.id)}</code><br/>
+            <strong>${escapeHtml(h.title)}</strong>
           </td>
           <td>${statusBadge}</td>
           <td style="font-size:12px; color:var(--text-secondary); max-width:350px;">${escapeHtml(h.operator_task)}</td>
@@ -254,16 +260,22 @@
     document.getElementById("policy-daily-cap").innerText = `${policy.max_cumulative_daily_refund_paise} paise (₹${(policy.max_cumulative_daily_refund_paise / 100).toFixed(2)})`;
     document.getElementById("policy-window").innerText = `${policy.max_refund_window_days} days`;
 
-    const emailList = (policy.allowed_recipient_emails || []).map((e) => `<li><code>${e}</code></li>`).join("");
+    const emailList = (policy.allowed_recipient_emails || []).map((e) => `<li><code>${escapeHtml(e)}</code></li>`).join("");
     document.getElementById("policy-emails").innerHTML = emailList || "None configured";
 
-    const domainList = (policy.allowed_callback_domains || []).map((d) => `<li><code>${d}</code></li>`).join("");
+    const domainList = (policy.allowed_callback_domains || []).map((d) => `<li><code>${escapeHtml(d)}</code></li>`).join("");
     document.getElementById("policy-domains").innerHTML = domainList || "None configured";
   }
 
-  function escapeHtml(str) {
-    if (!str) return "";
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  function escapeHtml(val) {
+    if (val === null || val === undefined) return "";
+    const str = typeof val === "string" ? val : String(val);
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
   // Run on DOM ready
