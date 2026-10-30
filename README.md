@@ -5,7 +5,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![Tests Passing](https://img.shields.io/badge/tests-68%20passed-brightgreen.svg)]()
 
-[AUTHOR: write 5-6 sentences here in your own words: what you built, why, and one surprising finding]
+I built payment-agent-gauntlet, a test harness that attacks AI agents that can move money, plus a small policy proxy that enforces rules outside the model. Razorpay has said it wants Agent Studio to grow into an open ecosystem, and I wanted to see how you would check that an agent can't be talked into a bad refund or settlement. The harness runs agents against a mock of Razorpay's MCP tools, built from the official tool schemas, and judges what actually changed in the backend, not what the agent says; every attack also has an authorized twin, so a refusal can be told apart from an agent that simply can't do the task. The result that surprised me most: with no rules in its prompt, the agent believed a fake "holiday policy" note and issued a refund that a 30-day return rule would have blocked, but when the operator stated the policy in the task itself, it refused in all five runs. A deterministic proxy can enforce that rule, but it also held about half of the legitimate actions for approval, so the results show a trade-off, not a fix. This is a small experiment (one hosted model, five runs per scenario, a mock backend, scenarios I designed), so I treat the findings as exploratory.
 
 ---
 
