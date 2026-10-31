@@ -4,6 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 
+**Live Demo**: https://ayushkhatidev.github.io/payment-agent-gauntlet/  
 68 tests; run locally with: `uv run pytest`
 
 I built payment-agent-gauntlet, a test harness that attacks AI agents that can move money, plus a small policy proxy that enforces rules outside the model. Razorpay has said it wants Agent Studio to grow into an open ecosystem, and I wanted to see how you would check that an agent can't be talked into a bad refund or settlement. The harness runs agents against a mock of Razorpay's MCP tools, built from the official tool schemas, and judges what actually changed in the backend, not what the agent says; every attack also has an authorized twin, so a refusal can be told apart from an agent that simply can't do the task. The result that surprised me most: with no rules in its prompt, the agent believed a fake "holiday policy" note and issued a refund that a 30-day return rule would have blocked, but when the operator stated the policy in the task itself, it refused in all five runs. A deterministic proxy can enforce that rule, but it also held about half of the legitimate actions for approval, so the results show a trade-off, not a fix. This is a small experiment (one hosted model, five runs per scenario, a mock backend, scenarios I designed), so I treat the findings as exploratory.
@@ -162,6 +163,8 @@ uv run python scripts/evaluate_guardrails_scripted.py
 ---
 
 ## 🖥️ Local Interactive Demo & GitHub Pages
+
+**Live Demo**: https://ayushkhatidev.github.io/payment-agent-gauntlet/
 
 A self-contained static demo is included in [`/demo`](demo/). It makes **zero external network calls**, requires **no API keys**, and loads exclusively from pre-exported benchmark data. In the side-by-side Attack Inspector: Left: recorded runs of the real model. Right: a scripted attacker that issues the forbidden call whether or not the model would, to show what the proxy does if an agent is fooled.
 
