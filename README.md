@@ -14,8 +14,6 @@ I built payment-agent-gauntlet, a test harness that attacks AI agents that can m
 > [!IMPORTANT]
 > **Independent Project Disclaimer**: `payment-agent-gauntlet` is an independent open-source research and evaluation benchmark. It is **not affiliated with, endorsed by, sponsored by, or associated with Razorpay Software Private Limited** in any manner. This project makes **no claims about Razorpay internals, actual backend security, or proprietary implementations**. All MCP tool definitions and schemas reflect publicly documented interfaces for developer agent integration.
 
-Built with AI-assisted development (Claude Code); all design decisions, scenarios and results were reviewed by the author.
-
 ---
 
 ## ⚡ Overview
@@ -222,6 +220,12 @@ payment-agent-gauntlet/
 │   └── engine/                         # In-memory financial state engine & audit log
 └── tests/                              # Pytest suite (68 unit & contract tests)
 ```
+
+---
+
+## How this was built
+
+Built with Claude Code. I defined the problem and the threat model, chose and reviewed the scenarios and judge rules, and checked every result against the recorded runs; Claude Code wrote most of the implementation.
 
 ---
 
