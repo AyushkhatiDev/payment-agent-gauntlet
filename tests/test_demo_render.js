@@ -40,33 +40,41 @@ function runSmokeTest() {
 
   // 1. Assert Overview Elements
   const statScenarios = window.document.getElementById("stat-scenarios");
-  if (statScenarios) assert.strictEqual(statScenarios.textContent, "52");
+  if (statScenarios) {
+    assert.strictEqual(statScenarios.textContent, "52");
+    console.log("✓ Stat Scenarios: 52 scenarios verified");
+  }
 
   const statStrong = window.document.getElementById("stat-strong-asr");
   assert(statStrong.textContent.includes("0 of 110 runs"));
+  console.log("✓ Stat Strong Prompt: 0 of 110 runs executed verified");
 
   const statMinimal = window.document.getElementById("stat-minimal-asr");
   assert(statMinimal.textContent.includes("15 of 75 runs"));
   assert(statMinimal.textContent.includes("scen_04, scen_06b, scen_23"));
+  console.log("✓ Stat Minimal Prompt: 15 of 75 runs executed (scen_04, scen_06b, scen_23) verified");
 
   const statProxy = window.document.getElementById("stat-proxy-mitigation");
   assert(statProxy.textContent.includes("8 blocked, 11 held for approval"));
+  console.log("✓ Stat Policy Proxy: 8 blocked, 11 held for approval verified");
 
   const statFriction = window.document.getElementById("stat-friction");
   assert.strictEqual(statFriction.textContent, "12 / 24 (50.0%)");
+  console.log("✓ Stat Twin Friction: 12 / 24 (50.0%) verified");
 
   const statFp = window.document.getElementById("stat-false-positives");
   assert.strictEqual(statFp.textContent, "4 / 24 (16.7%)");
+  console.log("✓ Stat False Positives: 4 / 24 (16.7%) verified");
 
   // Assert Attack Mitigation Table
   const mitigationRows = window.document.querySelectorAll("#attack-mitigation-table-body tr");
-  console.log(`✓ Attack Mitigation Table: ${mitigationRows.length} families rendered`);
   assert(mitigationRows.length >= 5, "Attack mitigation table must have at least 5 rows");
+  console.log(`✓ Attack Mitigation Table: ${mitigationRows.length} families rendered`);
 
   // Assert Comparator Tab
   const compPills = window.document.querySelectorAll("#comparator-pills button");
-  console.log(`✓ Comparator Pills: ${compPills.length} scenarios available`);
   assert(compPills.length >= 4, "Comparator must have pills");
+  console.log(`✓ Comparator Pills: ${compPills.length} scenarios available`);
 
   // 1b. Test Comparator Interactions & Financial State Impact
   const compViewer = window.document.getElementById("comparator-viewer");
@@ -79,6 +87,7 @@ function runSmokeTest() {
     !scen01Baseline.textContent.toLowerCase().includes("state mutated"),
     "scen_01 baseline panel must NOT contain 'state mutated'"
   );
+  console.log("✓ scen_01 Baseline Panel: verified read-only impact without 'state mutated'");
 
   // Find and click pill for scen_23
   const pill23 = Array.from(compPills).find((p) => p.textContent.includes("23"));
@@ -95,10 +104,12 @@ function runSmokeTest() {
     subPanelTexts.some((t) => t.includes("minimal prompt")),
     "scen_23 inspector must display minimal prompt sub-panel"
   );
+  console.log("✓ scen_23 Baseline Panel: displays minimal-prompt sub-panel (caved to pressure)");
   assert(
     subPanelTexts.some((t) => t.includes("strong prompt")),
     "scen_23 inspector must display strong prompt sub-panel"
   );
+  console.log("✓ scen_23 Baseline Panel: displays strong-prompt sub-panel (refused memo)");
 
   // Find and click pill for scen_12
   const pill12 = Array.from(compPills).find((p) => p.textContent.includes("12"));
@@ -115,6 +126,7 @@ function runSmokeTest() {
     !scen12Guarded.textContent.includes("preserved unmutated"),
     "scen_12 guarded panel must NOT contain 'preserved unmutated'"
   );
+  console.log("✓ scen_12 Guarded Panel: contains 'mutated' and does NOT contain 'preserved unmutated'");
 
   // Assert NO tab shows the text "INTERCEPTED"
   const allTabs = window.document.querySelectorAll(".tab-pane");
@@ -125,6 +137,14 @@ function runSmokeTest() {
       `Tab ${tab.id} must not show the text 'INTERCEPTED'`
     );
   });
+  console.log("✓ Neutral Terminology: NO tab shows the text 'INTERCEPTED'");
+
+  // Assert page does not contain inverted refusal phrasing
+  assert(
+    !window.document.body.textContent.includes("refused to issue the refund in 0 of 5"),
+    "Page must NOT contain inverted phrasing 'refused to issue the refund in 0 of 5'"
+  );
+  console.log("✓ Wording Integrity: Page does NOT contain 'refused to issue the refund in 0 of 5'");
 
   // 2. Test Tab Navigation
   const tabButtons = window.document.querySelectorAll(".nav-tab");
@@ -136,7 +156,7 @@ function runSmokeTest() {
     const pane = window.document.getElementById(targetId);
     assert(pane.classList.contains("active"), `Tab pane ${targetId} must be active after click`);
   });
-  console.log("✓ All 6 tabs visited and activated successfully");
+  console.log("✓ Tab Navigation: All 6 tabs visited and activated successfully");
 
   // 3. Test Scenario Explorer Filter Options
   const scenariosBody = window.document.getElementById("scenarios-table-body");
@@ -151,14 +171,14 @@ function runSmokeTest() {
     filterSelect.value = opt;
     filterSelect.dispatchEvent(new window.Event("change"));
     const rowCount = scenariosBody.querySelectorAll("tr").length;
-    console.log(`✓ Filter '${opt}': ${rowCount} rows rendered`);
     assert(rowCount > 0, `Filter '${opt}' returned 0 rows! Every filter option must return rows.`);
+    console.log(`✓ Scenario Filter '${opt}': ${rowCount} rows rendered`);
   });
 
   // 4. Test Pre-Registered Holdouts Tab
   const holdoutRows = window.document.querySelectorAll("#holdouts-table-body tr");
-  console.log(`✓ Pre-Registered Holdouts Table: ${holdoutRows.length} rows rendered`);
   assert.strictEqual(holdoutRows.length, 6, "Expected exactly 6 holdout rows");
+  console.log(`✓ Pre-Registered Holdouts Table: ${holdoutRows.length} rows rendered`);
 
   // Assert holdout_06 badge matches and renders mock-only convenience label
   const holdout06Row = Array.from(holdoutRows).find((r) => r.innerHTML.includes("holdout_06_replay_altered_amount"));
@@ -167,19 +187,22 @@ function runSmokeTest() {
     holdout06Row.textContent.includes("mock-only convenience; not counted as a defense"),
     "holdout_06 row must contain 'mock-only convenience; not counted as a defense' badge"
   );
+  console.log("✓ Holdout 06 Badge: contains 'mock-only convenience; not counted as a defense'");
 
   // 5. Test Policy Guardrails Tab
   const emailItems = window.document.querySelectorAll("#policy-emails li");
   const domainItems = window.document.querySelectorAll("#policy-domains li");
-  console.log(`✓ Policy Guardrails: ${emailItems.length} allowed emails, ${domainItems.length} allowed domains`);
   assert.strictEqual(emailItems.length, 7, "Expected 7 allowed emails");
+  console.log(`✓ Policy Guardrails Emails: ${emailItems.length} allowed emails verified`);
   assert.strictEqual(domainItems.length, 6, "Expected 6 allowed domains");
+  console.log(`✓ Policy Guardrails Domains: ${domainItems.length} allowed domains verified`);
 
   // 6. Assert No JavaScript Errors
   if (errors.length > 0) {
     console.error("JavaScript errors captured during render:", errors);
     process.exit(1);
   }
+  console.log("✓ JavaScript Errors: Zero errors captured during execution");
 
   console.log("=== All Demo Rendering Smoke Tests Passed Cleanly with Zero Errors ===");
 }
