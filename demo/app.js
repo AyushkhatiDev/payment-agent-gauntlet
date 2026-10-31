@@ -194,8 +194,8 @@
         .map((tr) => {
           const impact = deriveBaselineImpact(tr.tool_calls, item.scenario_id);
           const callsHtml = tr.tool_calls.map((c) => renderToolCallItem(c)).join("");
-          const isMinimal = tr.prompt_condition === "minimal";
-          const condBadge = isMinimal ? "badge-red" : "badge-green";
+          const isForbiddenExecuted = tr.forbidden_actions_executed > 0;
+          const condBadge = isForbiddenExecuted ? "badge-red" : "badge-green";
           return `
             <div class="sub-panel">
               <div class="sub-panel-header">
@@ -209,7 +209,7 @@
               </div>
               <div style="font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">AUDIT TRACE:</div>
               ${callsHtml}
-              <div style="font-size:12px; margin-top:8px; color:${isMinimal ? 'var(--status-executed)' : 'var(--text-secondary)'};">
+              <div style="font-size:12px; margin-top:8px; color:${isForbiddenExecuted ? 'var(--status-executed)' : 'var(--text-secondary)'};">
                 <strong>Financial State Impact:</strong> ${escapeHtml(impact)}
               </div>
             </div>`;
@@ -230,19 +230,23 @@
         prompt_condition: "strong",
         run_id: "recorded",
         repetition: 1,
-        tool_calls: item.unconstrained_trace || []
+        tool_calls: item.unconstrained_trace || [],
+        forbidden_actions_executed: 0
       };
       const callsHtml = traceInfo.tool_calls.map((c) => renderToolCallItem(c)).join("");
       const impact = deriveBaselineImpact(traceInfo.tool_calls, item.scenario_id);
-      const isMutated = impact.includes("executed") && !impact.includes("No financial state changed");
+      const isForbiddenExecuted = traceInfo.forbidden_actions_executed !== undefined
+        ? traceInfo.forbidden_actions_executed > 0
+        : (item.forbidden_actions_executed > 0);
+      const statusBadge = isForbiddenExecuted ? "badge-red" : "badge-green";
 
       baselineHtml = `
-        <div class="panel-agent compromised">
+        <div class="panel-agent ${isForbiddenExecuted ? 'compromised' : 'guarded'}">
           <div class="panel-header">
             <span class="panel-title">1. Baseline Agent (No Proxy)</span>
             <div>
               <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">${escapeHtml(traceInfo.prompt_condition)} prompt</span>
-              <span class="badge ${isMutated ? 'badge-red' : 'badge-green'}">${escapeHtml(item.unconstrained_outcome)}</span>
+              <span class="badge ${statusBadge}">${escapeHtml(item.unconstrained_outcome)}</span>
             </div>
           </div>
           <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:8px;">
@@ -251,7 +255,7 @@
           <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${escapeHtml(item.unconstrained_analysis)}</p>
           <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">TOOL CALL AUDIT TRACE:</div>
           ${callsHtml}
-          <div style="font-size:12px; margin-top:12px; color:${isMutated ? 'var(--status-executed)' : 'var(--text-secondary)'};">
+          <div style="font-size:12px; margin-top:12px; color:${isForbiddenExecuted ? 'var(--status-executed)' : 'var(--text-secondary)'};">
             <strong>Financial State Impact:</strong> ${escapeHtml(impact)}
           </div>
         </div>`;
@@ -283,6 +287,17 @@
         </div>
       </div>`;
 
+    let vectorLabel = null;
+    if (item.vector_type === "injection" || item.family === "Indirect Prompt Injection" || item.family === "Contextual / Policy Confusion" || item.family === "Autopilot Batch Processing") {
+      vectorLabel = "Injected text in data";
+    } else if (item.vector_type === "direct_pressure" || item.family === "Direct pressure messages (social engineering)") {
+      vectorLabel = "Attacker message";
+    }
+
+    const vectorHtml = vectorLabel
+      ? `<br/><strong style="color:#e3b341;">${escapeHtml(vectorLabel)}:</strong> ${escapeHtml(item.injected_payload)}`
+      : "";
+
     viewer.innerHTML = `
       <div style="margin-bottom:14px;">
         <h3 style="font-size:18px; margin-bottom:4px;">${escapeHtml(item.title)}</h3>
@@ -290,8 +305,7 @@
       </div>
 
       <div class="callout-box" style="margin-bottom:16px;">
-        <strong>Operator Task:</strong> "${escapeHtml(item.task)}"<br/>
-        <strong style="color:#e3b341;">Untrusted Injected Vector:</strong> ${escapeHtml(item.injected_payload)}
+        <strong>Operator Task:</strong> "${escapeHtml(item.task)}"${vectorHtml}
       </div>
 
       <div class="split-view">

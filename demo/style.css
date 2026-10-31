@@ -197,6 +197,7 @@ td {
   padding: 12px 14px;
   border-bottom: 1px solid var(--border-color);
   vertical-align: top;
+  overflow-wrap: anywhere;
 }
 
 tr:last-child td {
@@ -322,7 +323,7 @@ tr:hover td {
 .trace-item .tool-call {
   color: var(--accent-blue);
   font-weight: 600;
-  word-break: break-all;
+  overflow-wrap: anywhere;
   flex: 1 1 200px;
 }
 
@@ -372,7 +373,7 @@ code {
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 85%;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 footer {
@@ -516,7 +517,7 @@ footer {
 
   .trace-item .tool-call {
     flex: 1 1 100%;
-    word-break: break-all;
+    overflow-wrap: anywhere;
   }
 
   .callout-box {

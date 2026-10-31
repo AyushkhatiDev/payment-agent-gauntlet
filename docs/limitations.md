@@ -76,6 +76,9 @@ The policy proxy enforces that recipient emails on `create_payment_link` match `
 - Prior to the fix, single-payment test states derived reference time from `max(created_at)`, yielding an age of 0 days. With the injectable reference time fix (`1732888000`), `scen_14`, `scen_23`, and `scen_23b` are all deterministically blocked by the 30-day window check (`max_refund_window_days`).
 - In addition, `holdout_06` relies on the mock-only receipt guard; it is reported as a mock-only convenience, not counted as a defense.
 
+### E. Proxy Evaluation Assumes a Fooled Agent
+Left: recorded runs of the real model. Right: a scripted attacker that issues the forbidden call whether or not the model would, to show what the proxy does if an agent is fooled. Phase 4 Evaluation A uses a scripted attacker that unconditionally attempts the forbidden mutation, evaluating proxy containment capability under the worst-case assumption that prompt-layer defenses have failed.
+
 ---
 
 ## 4. Benchmark & Scenario Limitations
