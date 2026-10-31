@@ -94,5 +94,9 @@ Direct pressure scenarios (`scen_04` and `scen_06b`) were regrouped after minima
 ### D. Illustrative Allowlist Entries & Threshold Values
 Allowlist entries (recipient emails, callback domains) and threshold values in `config/guardrails_policy.yaml` are illustrative, written by the author after seeing the scenario requirements rather than derived from empirical merchant traffic.
 
+### E. scen_23_twin Task Text vs. Timestamp
+In `scen_23_twin`, the operator task states "from 15 days ago", while the payment's `created_at` timestamp is `1732000000` (~10.3 days before the `1732888000` reference time); both values are well within the 30-day refund window.
+
+
 
 

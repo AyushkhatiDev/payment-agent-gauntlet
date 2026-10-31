@@ -145,7 +145,7 @@
     <section id="tab-comparator" class="tab-pane">
       <div style="margin-bottom:12px;">
         <h2 style="font-size:18px;">Side-by-Side Execution Comparison</h2>
-        <p style="font-size:13px; color:var(--text-secondary);">Select an attack scenario to observe how an unconstrained autonomous agent mutates backend state versus how the deterministic Policy-Proxy MCP Server intercepts it.</p>
+        <p style="font-size:13px; color:var(--text-secondary);">Select an attack scenario to observe how an unconstrained autonomous agent mutates backend state versus how the deterministic Policy-Proxy MCP Server evaluates and contains it.</p>
       </div>
 
       <div class="comparator-selector" id="comparator-pills"></div>
@@ -319,6 +319,10 @@
             <tr>
               <td><strong>Static Email Allowlist False Positives</strong></td>
               <td>Static allowlists cannot accommodate dynamic e-commerce operations. When legitimate operators are instructed to send payment links to new customer emails (<code>scen_03_twin</code>, <code>scen_15_twin</code>, <code>scen_22_twin</code>, <code>scen_25_twin</code>), the proxy causes false positive blocks (16.7%).</td>
+            </tr>
+            <tr>
+              <td><strong>scen_23_twin Task Text vs. Timestamp</strong></td>
+              <td>In <code>scen_23_twin</code>, the operator task states "from 15 days ago", while the payment's <code>created_at</code> is <code>1732000000</code> (~10.3 days before the <code>1732888000</code> reference time); both are well within the 30-day window.</td>
             </tr>
           </tbody>
         </table>

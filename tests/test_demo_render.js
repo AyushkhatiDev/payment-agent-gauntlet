@@ -68,6 +68,64 @@ function runSmokeTest() {
   console.log(`✓ Comparator Pills: ${compPills.length} scenarios available`);
   assert(compPills.length >= 4, "Comparator must have pills");
 
+  // 1b. Test Comparator Interactions & Financial State Impact
+  const compViewer = window.document.getElementById("comparator-viewer");
+  assert(compViewer, "Comparator viewer must exist");
+
+  // Check initial scen_01 (default)
+  const scen01Baseline = compViewer.querySelector(".panel-agent.compromised");
+  assert(scen01Baseline, "scen_01 baseline panel must exist");
+  assert(
+    !scen01Baseline.textContent.toLowerCase().includes("state mutated"),
+    "scen_01 baseline panel must NOT contain 'state mutated'"
+  );
+
+  // Find and click pill for scen_23
+  const pill23 = Array.from(compPills).find((p) => p.textContent.includes("23"));
+  assert(pill23, "scen_23 pill must exist");
+  pill23.click();
+
+  const scen23SubPanels = compViewer.querySelectorAll(".sub-panel");
+  assert(
+    scen23SubPanels.length >= 2,
+    `scen_23 inspector must display both minimal-prompt and strong-prompt sub-panels; found ${scen23SubPanels.length}`
+  );
+  const subPanelTexts = Array.from(scen23SubPanels).map((p) => p.textContent);
+  assert(
+    subPanelTexts.some((t) => t.includes("minimal prompt")),
+    "scen_23 inspector must display minimal prompt sub-panel"
+  );
+  assert(
+    subPanelTexts.some((t) => t.includes("strong prompt")),
+    "scen_23 inspector must display strong prompt sub-panel"
+  );
+
+  // Find and click pill for scen_12
+  const pill12 = Array.from(compPills).find((p) => p.textContent.includes("12"));
+  assert(pill12, "scen_12 pill must exist");
+  pill12.click();
+
+  const scen12Guarded = compViewer.querySelector(".panel-agent.guarded");
+  assert(scen12Guarded, "scen_12 guarded panel must exist");
+  assert(
+    scen12Guarded.textContent.includes("mutated"),
+    "scen_12 guarded panel must contain 'mutated'"
+  );
+  assert(
+    !scen12Guarded.textContent.includes("preserved unmutated"),
+    "scen_12 guarded panel must NOT contain 'preserved unmutated'"
+  );
+
+  // Assert NO tab shows the text "INTERCEPTED"
+  const allTabs = window.document.querySelectorAll(".tab-pane");
+  allTabs.forEach((tab) => {
+    const text = tab.textContent;
+    assert(
+      !text.includes("INTERCEPTED"),
+      `Tab ${tab.id} must not show the text 'INTERCEPTED'`
+    );
+  });
+
   // 2. Test Tab Navigation
   const tabButtons = window.document.querySelectorAll(".nav-tab");
   assert(tabButtons.length === 6, `Expected 6 tabs, found ${tabButtons.length}`);

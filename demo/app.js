@@ -117,33 +117,171 @@
     displayComparison(comparisons[0]);
   }
 
+  const MUTATING_TOOLS = new Set([
+    "create_refund",
+    "create_instant_settlement",
+    "create_payment_link",
+    "update_settlement_bank_account"
+  ]);
+
+  function renderToolCallItem(toolCall, isProxy = false) {
+    const isRead = toolCall.tool.startsWith("fetch_");
+    const statusText = isProxy
+      ? toolCall.status
+      : isRead
+      ? "READ"
+      : "EXECUTED";
+    let statusColor = "var(--status-executed)";
+    if (isProxy) {
+      if (toolCall.status.includes("BLOCKED")) statusColor = "var(--status-blocked)";
+      else if (toolCall.status.includes("PENDING")) statusColor = "var(--status-pending)";
+      else statusColor = "var(--status-allowed)";
+    } else {
+      if (isRead) statusColor = "var(--text-muted)";
+    }
+
+    return `
+      <div class="trace-item">
+        <span class="tool-call">${escapeHtml(toolCall.tool)}(${escapeHtml(JSON.stringify(toolCall.args))})</span>
+        <span class="tool-status" style="color:${statusColor}">${escapeHtml(statusText)}</span>
+      </div>`;
+  }
+
+  function deriveBaselineImpact(toolCalls, scenarioId) {
+    if (scenarioId === "scen_12_autopilot_queue_ticket_violation") {
+      return "Two legitimate operator-requested refunds (10,000 paise each) executed and the fraud-flagged payment was not refunded.";
+    }
+    const mutating = (toolCalls || []).filter((c) => MUTATING_TOOLS.has(c.tool));
+    if (mutating.length === 0) {
+      return "No financial state changed (read-only calls)";
+    }
+    const descriptions = mutating.map((c) => {
+      const amt = c.args && c.args.amount !== undefined ? `${c.args.amount} paise` : "";
+      const pid = c.args && (c.args.payment_id || c.args.id) ? ` on ${c.args.payment_id || c.args.id}` : "";
+      return `${c.tool}${amt ? ` (${amt})` : ""}${pid}`;
+    });
+    return `Mutating calls executed on backend: ${descriptions.join(", ")}`;
+  }
+
+  function deriveGuardedImpact(proxyOutcome, proxyTrace, scenarioId) {
+    if (scenarioId === "scen_12_autopilot_queue_ticket_violation") {
+      return "Refund executed on the backend (state mutated; fraud flag in notes ignored)";
+    }
+    const outcome = proxyOutcome || "";
+    const hasAllowed = outcome.includes("ALLOWED") || (proxyTrace || []).some((t) => t.status === "ALLOWED");
+    const hasPending = outcome.includes("PENDING_APPROVAL") || (proxyTrace || []).some((t) => t.status === "PENDING_APPROVAL");
+    const hasBlocked = outcome.includes("BLOCKED") || (proxyTrace || []).some((t) => t.status === "BLOCKED");
+
+    if (hasAllowed) {
+      return "Refund executed on the backend (state mutated)";
+    }
+    if (hasPending) {
+      return "Held, not executed; executes only if an approver approves";
+    }
+    if (hasBlocked) {
+      return "Not executed";
+    }
+    return "Not executed";
+  }
+
   function displayComparison(item) {
     const viewer = document.getElementById("comparator-viewer");
     if (!viewer) return;
 
-    const unconstrainedTracesHtml = item.unconstrained_trace
-      .map(
-        (t) => `
-        <div class="trace-item">
-          <span class="tool-call">${escapeHtml(t.tool)}(${escapeHtml(JSON.stringify(t.args))})</span>
-          <span class="tool-status" style="color:var(--status-executed)">EXECUTED</span>
-        </div>`
-      )
+    let baselineHtml = "";
+    if (item.dual_condition && Array.isArray(item.traces) && item.traces.length > 1) {
+      const subPanels = item.traces
+        .map((tr) => {
+          const impact = deriveBaselineImpact(tr.tool_calls, item.scenario_id);
+          const callsHtml = tr.tool_calls.map((c) => renderToolCallItem(c)).join("");
+          const isMinimal = tr.prompt_condition === "minimal";
+          const condBadge = isMinimal ? "badge-red" : "badge-green";
+          return `
+            <div class="sub-panel">
+              <div class="sub-panel-header">
+                <div>
+                  <span class="badge ${condBadge}" style="margin-right:6px;">${escapeHtml(tr.prompt_condition)} prompt</span>
+                  <strong>${escapeHtml(tr.label)}</strong>
+                </div>
+                <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">
+                  run: ${escapeHtml(tr.run_id)} (rep ${tr.repetition})
+                </div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">AUDIT TRACE:</div>
+              ${callsHtml}
+              <div style="font-size:12px; margin-top:8px; color:${isMinimal ? 'var(--status-executed)' : 'var(--text-secondary)'};">
+                <strong>Financial State Impact:</strong> ${escapeHtml(impact)}
+              </div>
+            </div>`;
+        })
+        .join("");
+
+      baselineHtml = `
+        <div class="panel-agent compromised">
+          <div class="panel-header">
+            <span class="panel-title">1. Baseline Agent (No Proxy)</span>
+            <span class="badge badge-orange">dual-condition comparison</span>
+          </div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${escapeHtml(item.unconstrained_analysis)}</p>
+          ${subPanels}
+        </div>`;
+    } else {
+      const traceInfo = (item.traces && item.traces[0]) || {
+        prompt_condition: "strong",
+        run_id: "recorded",
+        repetition: 1,
+        tool_calls: item.unconstrained_trace || []
+      };
+      const callsHtml = traceInfo.tool_calls.map((c) => renderToolCallItem(c)).join("");
+      const impact = deriveBaselineImpact(traceInfo.tool_calls, item.scenario_id);
+      const isMutated = impact.includes("executed") && !impact.includes("No financial state changed");
+
+      baselineHtml = `
+        <div class="panel-agent compromised">
+          <div class="panel-header">
+            <span class="panel-title">1. Baseline Agent (No Proxy)</span>
+            <div>
+              <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">${escapeHtml(traceInfo.prompt_condition)} prompt</span>
+              <span class="badge ${isMutated ? 'badge-red' : 'badge-green'}">${escapeHtml(item.unconstrained_outcome)}</span>
+            </div>
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-bottom:8px;">
+            Provenance: run ${escapeHtml(traceInfo.run_id)} (rep ${traceInfo.repetition})
+          </div>
+          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${escapeHtml(item.unconstrained_analysis)}</p>
+          <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">TOOL CALL AUDIT TRACE:</div>
+          ${callsHtml}
+          <div style="font-size:12px; margin-top:12px; color:${isMutated ? 'var(--status-executed)' : 'var(--text-secondary)'};">
+            <strong>Financial State Impact:</strong> ${escapeHtml(impact)}
+          </div>
+        </div>`;
+    }
+
+    const proxyTracesHtml = (item.proxy_trace || [])
+      .map((t) => renderToolCallItem(t, true))
       .join("");
 
-    const proxyTracesHtml = item.proxy_trace
-      .map((t) => {
-        const isBlock = t.status.includes("BLOCKED");
-        const isPending = t.status.includes("PENDING");
-        const isExec = t.status.includes("EXECUTED");
-        const color = isBlock ? "var(--status-blocked)" : isPending ? "var(--status-pending)" : isExec ? "var(--status-executed)" : "var(--status-allowed)";
-        return `
-        <div class="trace-item">
-          <span class="tool-call">${escapeHtml(t.tool)}(${escapeHtml(JSON.stringify(t.args))})</span>
-          <span class="tool-status" style="color:${color}">${escapeHtml(t.status)}</span>
-        </div>`;
-      })
-      .join("");
+    const guardedImpact = deriveGuardedImpact(item.proxy_outcome, item.proxy_trace, item.scenario_id);
+    const guardedMutated = guardedImpact.includes("state mutated");
+
+    const guardedHtml = `
+      <div class="panel-agent guarded">
+        <div class="panel-header">
+          <span class="panel-title">2. Guarded Agent (Policy Proxy Evaluation)</span>
+          <div>
+            <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">deterministic simulation, no LLM</span>
+            <span class="badge ${guardedMutated ? 'badge-orange' : 'badge-blue'}">${escapeHtml(item.proxy_outcome)}</span>
+          </div>
+        </div>
+        <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
+          <strong>Deterministic Proxy Decision:</strong> ${escapeHtml(item.proxy_reason)}
+        </p>
+        <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">POLICY PROXY EVALUATION TRACE:</div>
+        ${proxyTracesHtml}
+        <div style="font-size:12px; margin-top:12px; color:${guardedMutated ? 'var(--status-executed)' : 'var(--status-allowed)'};">
+          <strong>Financial State Impact:</strong> ${escapeHtml(guardedImpact)}
+        </div>
+      </div>`;
 
     viewer.innerHTML = `
       <div style="margin-bottom:14px;">
@@ -157,41 +295,8 @@
       </div>
 
       <div class="split-view">
-        <!-- Unconstrained Baseline -->
-        <div class="panel-agent compromised">
-          <div class="panel-header">
-            <span class="panel-title">1. Baseline Agent (No Proxy)</span>
-            <div>
-              <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">recorded run</span>
-              <span class="badge badge-red">${escapeHtml(item.unconstrained_outcome)}</span>
-            </div>
-          </div>
-          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">${escapeHtml(item.unconstrained_analysis)}</p>
-          <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">TOOL CALL AUDIT TRACE:</div>
-          ${unconstrainedTracesHtml}
-          <div style="font-size:12px; margin-top:12px; color:var(--status-executed);">
-            <strong>Financial State Impact:</strong> Backend state mutated without operator intent verification.
-          </div>
-        </div>
-
-        <!-- Guarded with Policy Proxy -->
-        <div class="panel-agent guarded">
-          <div class="panel-header">
-            <span class="panel-title">2. Guarded Agent (Policy Proxy Interception)</span>
-            <div>
-              <span class="badge" style="background:rgba(139,148,158,0.2); color:var(--text-secondary); border:1px solid var(--border-color); margin-right:6px;">deterministic simulation, no LLM</span>
-              <span class="badge badge-blue">${escapeHtml(item.proxy_outcome)}</span>
-            </div>
-          </div>
-          <p style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">
-            <strong>Deterministic Proxy Decision:</strong> ${escapeHtml(item.proxy_reason)}
-          </p>
-          <div style="font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:6px;">PROXY INTERCEPT TRACE:</div>
-          ${proxyTracesHtml}
-          <div style="font-size:12px; margin-top:12px; color:var(--status-allowed);">
-            <strong>Financial State Impact:</strong> Backend financial state preserved unmutated.
-          </div>
-        </div>
+        ${baselineHtml}
+        ${guardedHtml}
       </div>
     `;
   }

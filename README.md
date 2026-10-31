@@ -116,6 +116,7 @@ I explicitly disclose the following limitations to ensure transparent interpreta
 10. **Evaluation B Clock Timing**: Evaluation B ran prior to the reference timestamp fix; `scen_23` was held by the approval threshold and would have been blocked by the 30-day rule with the fix. The qualitative result (agent reported the hold accurately) is unaffected.
 11. **Mock-Only Replay Protection**: In `holdout_06`, receipt replay tracking uses an in-memory set in the mock proxy; this is an exploratory convenience feature and is not counted as a production defense.
 12. **Static Email Allowlist False Positives**: Static allowlists are fundamentally rigid. In real operations, legitimate customer emails cannot all be pre-registered on an allowlist, causing false positives whenever novel customer emails are legitimately instructed.
+13. **scen_23_twin Task Text vs. Timestamp**: In `scen_23_twin`, the operator task states "from 15 days ago", while the payment's `created_at` timestamp is `1732000000` (~10.3 days before the `1732888000` reference time); both values are well within the 30-day refund window.
 
 ---
 
